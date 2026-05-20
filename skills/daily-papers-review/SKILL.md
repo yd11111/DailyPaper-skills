@@ -221,55 +221,91 @@ description: |
 
 ---
 
-### Phase 5.5: 对抗式自查（Adversarial Self-Review，**保存前强制做**）
+### Phase 5.5: 强制自查（pipeline_guard.py）
 
-**写完点评 → 不要直接进 Phase 6 保存**。先把刚生成的内容当**别人的草稿**读一遍，按下面 4 个维度逐项打分。**任何一项不通过，必须当场修订内容**再进 Phase 6。
+**写完 Phase 5 内容 → 落到 /tmp/daily_papers_draft.md → 调 guard：**
 
-> 灵感来源：Imbad0202/academic-research-skills 的 devils_advocate + integrity_verification 模式，但裁剪为单 agent 一遍过，避免日报变成论文 review。
+```bash
+python3 ../_shared/pipeline_guard.py \
+    /tmp/daily_papers_draft.md \
+    --enriched /tmp/daily_papers_enriched.json \
+    --meta /tmp/daily_papers_search_meta.json \
+    --notes "{NOTES_PATH}" \
+    --json-out /tmp/guard_report.json
+```
 
-#### 5.5.1 日期完整性（最高优先级——这是历史事故的重灾区）
+`{NOTES_PATH}` 是 Step 0 解析出来的 `论文笔记` 路径。
 
-- 读取 `/tmp/daily_papers_search_meta.json`，记下 `age_cutoff`
-- 翻每一篇被收进推荐的论文，在 enriched 数据里看它的 `date` 字段
-- 任何一篇 `date < age_cutoff` → **立刻从推荐表删掉**，理由写到「被排除的论文」节
+**exit code 处置：**
+- `0` → guard 通过，跳过 Phase 5.6，直接进 Phase 6 保存
+- `1` → guard 发现违规，进 Phase 5.6 自修订
+- `2` → guard 内部错（输入文件缺失、JSON 解析失败等）→ 报 BLOCKED 告知用户，不要硬走
 
-#### 5.5.2 事实-证据校对
+**guard 检的是三件硬事实：**
+
+1. **C1 date_cutoff**：每篇推荐论文 `published_date ≥ age_cutoff`（从 enriched.json + meta.json 拉数据机械对照）
+2. **C2 existing_note_wikilink**：每条 `📒 **已有笔记**: [[xxx]]` 行的 xxx 在 `{NOTES_PATH}` 下 glob 必须命中真实 .md 文件
+3. **C3 critique_evidence_triples**：每个**非"已有笔记简化格式"**的论文段必须有 `🧪 锐评依据:` 块且 ≥2 条 `Claim/Evidence/Confidence`
+
+**guard 不查的（继续靠你 LLM prose 自查，下面这两项相当于以前的 5.5.2 / 5.5.4）：**
+
+#### 5.5.A 事实-证据校对（LLM 自查）
 
 对每篇论文的「核心方法 / 对比方法 / 锐评 / 借鉴意义」做反向校验：
 
-- **过度肯定检测**：搜出现「SOTA」「突破」「革命性」「最强」「首次」「全面超越」这种词的句子。每一处都要回到论文摘要 / method_summary / method_names 里找出**对应的具体数字或方法名**支撑；找不到的，要么补「（摘要未给硬数字，待全文确认）」要么删
-- **凭空硬伤检测**：搜锐评里说论文「缺 ablation」「没 baseline 对比」「没流式」这种话。回 enriched 数据的 `section_titles` 和 `table_titles` 检查——如果章节标题里出现「Ablation Study」或表格标题出现「Comparison」，就说明你的指控是错的，必须撤销
-- **已有笔记一致性**：如果某篇标为「已有笔记」`[[xxx]]`，必须 Glob `{NOTES_PATH}/**/xxx.md` 验证文件**真的存在**；不存在的 wikilink 要删
+- **过度肯定检测**：搜出现「SOTA」「突破」「革命性」「最强」「首次」「全面超越」的句子。每一处都要回到 abstract / method_summary / method_names 里找具体数字或方法名支撑；找不到的，要么补「（摘要未给硬数字，待全文确认）」要么删
+- **凭空硬伤检测**：搜锐评里说论文「缺 ablation」「没 baseline 对比」「没流式」这种话。回 enriched 数据的 `section_headers` 和 `captions` 检查——如果章节标题出现「Ablation Study」或表格标题出现「Comparison」，撤销指控
 - **再推论文标注**：对 `is_re_recommend=true` 的论文，必须有「⏪ 再推提醒：这篇在 {last_recommend_date} 推荐过」一行
 
-#### 5.5.3 Claim-Evidence 三元组覆盖
-
-每篇非「已有笔记简化格式」的论文，必须有 `🧪 锐评依据` 块，且至少 2 条 `Claim/Evidence/Confidence`。漏了的补上。
-
-#### 5.5.4 自相矛盾扫描
+#### 5.5.B 自相矛盾扫描（LLM 自查）
 
 - 同一篇的「借鉴意义」说「很有用」+ 锐评说「没价值」→ 选一个，删另一个
 - 分流表里写「🔥 必读」+ 锐评结尾打 `💀` 或 `🤡` → 等级要么降为「👀 值得看」要么改 emoji
 - 开头总评说「今天 TTS 在爆发」+ 实际只有 1 篇 TTS → 收口，改总评
 
-#### 5.5.5 输出自查结果
+LLM 自查发现的修改也写回 /tmp/daily_papers_draft.md；写回后再跑一次 guard 兜底（一般会过，guard 只会"宽松"加把锁）。
 
-修订完后，在收尾节后加一个折叠块：
+### Phase 5.6: 自修订（仅在 Phase 5.5 guard 失败时）
+
+1. Read `/tmp/guard_report.json`
+2. 按 `violations` 数组逐条修复 `/tmp/daily_papers_draft.md`：
+   - **date_cutoff** → 从 draft 中删整段论文（含分流表对应行 + `### N. 标题` 详评段）+ 在「被排除的论文」节加一行「spec #3 guard: published {date} 早于 cutoff {cutoff}」
+   - **existing_note_wikilink** → 仅删那条 `📒 **已有笔记**: [[xxx]]` 行，不删整段
+   - **critique_evidence_triples** → 给指定论文段补 `Claim/Evidence/Confidence` triple 到 ≥ 2 条
+3. 写回 `/tmp/daily_papers_draft.md`
+4. 重跑同样的 `pipeline_guard.py` 命令
+5. `exit 0` → 进 Phase 6
+6. `exit 1`（第 2 轮仍违规）：
+   ```bash
+   cp /tmp/daily_papers_draft.md "/tmp/draft_blocked_$(date +%Y%m%d_%H%M%S).md"
+   ```
+   告诉用户：「BLOCKED：guard 第 2 轮仍 N 处违规（{summary.by_check}），draft 已落到 /tmp/draft_blocked_*.md。请人工修复后改名为 daily_papers_draft.md，再手动跑 Phase 6 或重跑本流水线」
+   **不要 Write 到 vault**
+
+#### 5.6.A 输出自查结果（嵌入 Phase 6 保存的日报末尾）
+
+guard 通过后，把 `/tmp/guard_report.json` 的字段直接渲染成 details 块（数字来自 JSON，**不要凭记忆填**）：
 
 ```markdown
 <details>
-<summary>🔍 本次 Adversarial Self-Review 自查结果（透明度记录）</summary>
+<summary>🔍 本次 Adversarial Self-Review 自查结果（pipeline_guard.py 自动生成）</summary>
 
-- 日期完整性：✅ 全部 N 篇均在 age_cutoff 内 / ⚠️ 删除 M 篇超龄
-- 事实-证据校对：✅ 无过度肯定 / ⚠️ 修订 K 处过度肯定
-- 已有笔记一致性：✅ 所有 wikilink 验证通过 / ⚠️ 删除 J 个无效链接
-- 再推论文标注：✅ 全部标注 / ⚠️ 补标 P 篇
-- 自相矛盾扫描：✅ 无矛盾 / ⚠️ 修订 Q 处
-- Claim-Evidence 三元组覆盖：✅ 覆盖 X / X 篇
+| 检查 | 结果 |
+|---|---|
+| 5.5.1 日期完整性 (C1) | ✅ 全部 N 篇均在 age_cutoff 内 |
+| 5.5.5 已有笔记 wikilink (C2) | ✅ 所有 X 个 wikilink 验证通过 |
+| 5.5.3 🧪 锐评依据三元组 (C3) | ✅ Y / Y 篇满足 ≥2 triples |
+| 5.5.A 事实-证据校对 | ⚙️ LLM 自查（guard 不强制） |
+| 5.5.B 自相矛盾扫描 | ⚙️ LLM 自查（guard 不强制） |
+
+guard report: 第 1 轮通过 / 第 2 轮通过（含 K 处自修订）
 </details>
 ```
 
-如果**全部 ✅**，就照样写出来——这是给未来的你/用户的可追溯证据。
+N = `summary.stats.papers_in_draft - summary.by_check.date_cutoff`
+X = `summary.stats.wikilinks_checked`
+Y = `summary.stats.papers_in_draft - summary.stats.papers_skipped_for_C3`
+K = 第 2 轮才过时的自修订次数（仅在自修订发生时显示「含 K 处自修订」字段）
 
 ---
 
