@@ -1,0 +1,23 @@
+# 内层 Obsidian vault 自带 git 仓库，外层不跟踪
+DailyPaper/
+
+# 运行时日志
+*.log
+scripts/*.log
+
+# Python 编译产物
+__pycache__/
+*.pyc
+*.pyo
+
+# macOS
+.DS_Store
+
+# Claude Code 本地覆盖配置（环境特异）
+.claude/settings.local.json
+.claude/*.local.json
+
+# 临时 / 缓存
+/tmp/
+*.tmp
+*.swp
