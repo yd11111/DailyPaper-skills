@@ -1,0 +1,25 @@
+{
+  "target_date": "2026-05-20",
+  "days_window": 1,
+  "age_cutoff": "2026-05-13",
+  "age_window_days": 7,
+  "source_counts": {"hf": 16, "arxiv": 100},
+  "filter_steps": {
+    "age_filter": {"kept": 30, "dropped_aged": 86},
+    "merged_unique": 30,
+    "history_dedup": {"kept": 28, "removed_already_recommended": 2},
+    "min_score_filter": {"min_score": 2, "kept": 14},
+    "history_backfilled": 0
+  },
+  "final_count": 14,
+  "config": {
+    "arxiv_categories": ["cs.SD", "eess.AS", "cs.CL"],
+    "keywords_count": 44,
+    "negative_keywords_count": 18,
+    "domain_boost_count": 16,
+    "top_n": 15,
+    "min_score": 2,
+    "max_age_days": 7
+  },
+  "source_breakdown_of_final": {"hf-daily": 5, "arxiv": 9}
+}
