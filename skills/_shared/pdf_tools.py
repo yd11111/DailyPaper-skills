@@ -46,17 +46,25 @@ def _extract_text_local(path: Path, first_n_pages: int | None, timeout: int) -> 
 
 
 def _extract_text_url(url: str, first_n_pages: int | None, timeout: int) -> str:
-    page_args = " ".join(_pdftotext_page_args(first_n_pages))
-    cmd = (
-        f'curl -sL --max-time {timeout} "{url}" '
-        f'| pdftotext {page_args} - -'
-    )
+    # Two subprocesses + stdin pipe (no shell=True) so untrusted URLs cannot
+    # inject shell metacharacters. curl's --max-time caps the network side;
+    # the outer subprocess timeout is a safety net (+2s) for curl exit.
+    # pdftotext gets `timeout=timeout` (parsing in-memory bytes is fast).
+    # Worst-case wall time = (timeout + 2) + timeout = 2*timeout + 2.
     try:
-        r = subprocess.run(
-            cmd, shell=True, capture_output=True, text=True,
-            timeout=timeout + 5,
+        curl_proc = subprocess.run(
+            ["curl", "-sL", "--max-time", str(timeout), url],
+            capture_output=True, timeout=timeout + 2,
         )
-        return r.stdout or ""
+        if curl_proc.returncode != 0 or not curl_proc.stdout:
+            return ""
+        pdf_args = ["pdftotext"] + _pdftotext_page_args(first_n_pages) + ["-", "-"]
+        pdf_proc = subprocess.run(
+            pdf_args, input=curl_proc.stdout, capture_output=True, timeout=timeout,
+        )
+        if pdf_proc.returncode != 0:
+            return ""
+        return pdf_proc.stdout.decode("utf-8", errors="replace")
     except (subprocess.TimeoutExpired, OSError):
         return ""
 

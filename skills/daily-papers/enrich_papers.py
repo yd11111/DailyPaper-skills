@@ -343,14 +343,20 @@ async def extract_affiliations_pdf(arxiv_id: str, sem: asyncio.Semaphore,
         async with sem:
             try:
                 # Stage 1: fetch PDF text via centralized pdf_tools (spec #2).
+                # Budget: pdf_tools._extract_text_url worst case is 2*t + 2,
+                # so pass CURL_TIMEOUT // 2 (=15s for default 30) to keep
+                # Stage 1 ≤ 2*15+2 = 32s. Stage 2 (regex script, ~instant)
+                # gets a generous 10s. Combined ≤ 42s ≈ original 45s budget.
                 text = await asyncio.to_thread(
                     _pdf_tools.extract_text,
                     f"https://arxiv.org/pdf/{arxiv_id}",
-                    2,           # first_n_pages
-                    CURL_TIMEOUT,
+                    2,                      # first_n_pages
+                    CURL_TIMEOUT // 2,      # see budget note above
                 )
                 if text:
                     # Stage 2: pipe text into extract_affiliations.py via stdin.
+                    # 10s is generous: extract_affiliations.py is a pure regex
+                    # script that completes in well under a second.
                     proc = await asyncio.create_subprocess_exec(
                         sys.executable, EXTRACT_AFFILIATIONS_SCRIPT,
                         stdin=asyncio.subprocess.PIPE,
@@ -359,7 +365,7 @@ async def extract_affiliations_pdf(arxiv_id: str, sem: asyncio.Semaphore,
                     )
                     stdout, _ = await asyncio.wait_for(
                         proc.communicate(input=text.encode("utf-8")),
-                        timeout=CURL_TIMEOUT + 5,
+                        timeout=10,
                     )
                     if stdout:
                         data = json.loads(stdout.decode("utf-8", errors="replace"))
