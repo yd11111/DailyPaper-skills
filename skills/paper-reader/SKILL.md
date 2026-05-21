@@ -111,7 +111,7 @@ allowed-tools: Bash, Read, Write, Edit, Glob, Grep, WebFetch, WebSearch
    - 从摘要/HTML 中查找项目主页 URL（常见模式：`project page`、`github.io`、`our website`）
    - WebFetch 项目主页，提取展示图片（通常包含 teaser / demo 图）
 4. **来源 C — PDF 提取**（前两者都失败时）：
-   - `pdfimages -png` 从 PDF 中提取，筛选 >10KB 的有效图片
+   - 调 `_shared/pdf_tools.extract_images(pdf_path, out_dir, prefix, min_size_bytes=10240)`（spec #2 集中化封装），返回 >= 10 KB 的图片 Path 列表。不要直接 shell out `pdfimages`
 5. 笔记中用 `![Figure X](url)` 外链嵌入
 6. 验证：外链可加载 / 本地文件 >10KB
 7. **URL 去重**：写入前检查 URL 中是否有重复的 arxiv_id 路径段（如 `2603.05312v1/2603.05312v1/`），有则删除重复段。详见 `references/image-troubleshooting.md`

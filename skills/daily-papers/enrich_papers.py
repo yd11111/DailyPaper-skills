@@ -500,30 +500,42 @@ def main():
     """Main entry point with cross-platform path support.
 
     Usage:
-        # Linux/Mac - pipe from stdin
+        # Pipe stdin in, write output to file (single .json arg = output when stdin piped)
+        cat /tmp/daily_papers_top30.json | python3 enrich_papers.py /tmp/daily_papers_enriched.json
+
+        # Pipe stdin in, write to default stdout
         cat /tmp/daily_papers_top30.json | python3 enrich_papers.py
 
-        # Windows - file arguments
+        # Two file paths (no stdin) - explicit input + output
         python3 enrich_papers.py input.json output.json
 
-        # Cross-platform - auto-detect default paths
+        # Cross-platform - auto-detect default paths (no args, no stdin)
         python3 enrich_papers.py
     """
     output_path = None
     input_path = None
+    stdin_piped = not sys.stdin.isatty()
 
     # Parse arguments: [input.json] [output.json]
+    # Special case: if stdin is piped AND only 1 .json arg, that arg is the OUTPUT
+    # (stdin already provides the input). This matches the SKILL.md example.
     if len(sys.argv) >= 2:
         if sys.argv[1].endswith('.json'):
-            input_path = sys.argv[1]
+            if stdin_piped and len(sys.argv) == 2:
+                output_path = sys.argv[1]
+            else:
+                input_path = sys.argv[1]
         else:
             output_path = sys.argv[1]
     if len(sys.argv) >= 3:
         if sys.argv[2].endswith('.json'):
             output_path = sys.argv[2]
 
-    # Auto-detect input path if not provided (Windows/Linux compatible)
-    if not input_path:
+    # Auto-detect input path ONLY if not provided AND stdin is not piped.
+    # When stdin is piped (e.g., `cat top30 | enrich.py enriched.json`), the
+    # user's intent is to read from stdin — skipping auto-detect prevents
+    # the script from silently reading a stale file instead.
+    if not input_path and not stdin_piped:
         auto_input_path = temp_file_path('daily_papers_top30.json')
         if auto_input_path.exists():
             input_path = str(auto_input_path)

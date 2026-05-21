@@ -65,20 +65,38 @@
 - **影响**：现状只有"用户跑没崩"算 pass；regex match / 重复名 / 缺 affiliations 等边界场景全靠肉眼
 - **修复方向**：fixture 2-3 个 PDF（可重用 spec #2 的 sample.pdf）+ JSON 形状断言
 
-### P1-7：`DEFAULT_CONFIG` 是旧机器人方向（与用户当前方向**相反**）
+### ~~P1-7~~ ✅ `DEFAULT_CONFIG` 是旧机器人方向（与用户当前方向**相反**）
+
+**已修（2026-05-21）**：清空 `user_config.py:DEFAULT_CONFIG.daily_papers` 中的 keyword/category 列表，加注释解释。user-config.json 仍正确覆盖；missing config 会被 fetch_and_score.py 当成 0 关键词处理（loud failure：0 篇匹配），不再出现反向偏好。
 - **位置**：`skills/_shared/user_config.py:38-100`
 - **影响**：fallback 关键词是 `world model / embodied ai / 3d gaussian splatting / cs.RO/cs.CV/cs.AI/cs.LG`，且 `negative_keywords` 包含 `speech synthesis / text-to-speech`——即"屏蔽用户真正想要的论文"。一旦 `user-config.json` 丢失或损坏，pipeline 会用反向偏好静默运行
 - **修复方向**：两条路二选一——(a) 删除 keyword 部分让 missing config 直接报错，(b) 把默认值刷新为 TTS/speech 方向
 
-### P1-8：`paper-reader/SKILL.md` 仍推荐直接 `pdfimages -png`
+### ~~P1-8~~ ✅ `paper-reader/SKILL.md` 仍推荐直接 `pdfimages -png`
+
+**已修（2026-05-21）**：line 114 改为推荐 `_shared/pdf_tools.extract_images(...)`（spec #2 集中化封装）。
 - **位置**：`skills/paper-reader/SKILL.md:114`
 - **影响**：spec #2 已把 PDF 工具集中化，但 paper-reader 这份 prose 还在引导 LLM 直接 shell out。每次 LLM 读这份 SKILL 都会去 reinvent the wheel
 - **修复方向**：改成"import `pdf_tools.extract_images` 通过子进程或 `python -c`"，或干脆删掉那段（让 LLM 自己探索）
 
-### P1-9：`reorganize_notes.py` 是死代码且有**错误分类**
+### ~~P1-9~~ ✅ `reorganize_notes.py` 是死代码且有**错误分类**
+
+**已修（2026-05-21）**：`git rm skills/paper-reader/assets/reorganize_notes.py`。无外部 caller，删除安全。
 - **位置**：`skills/paper-reader/assets/reorganize_notes.py`（458 行）
 - **影响**：`CATEGORY_RULES` 是旧的机器人 taxonomy（`3-机器人策略 / 4-足式运动 / 6-3D视觉`...）。当前 vault 是 speech taxonomy（`1-TTS与语音合成`...）。**如果有人误跑这个脚本，会把所有语音笔记打散到 `_待整理/`**
 - **修复方向**：删（推荐）或为新 taxonomy 重写
+
+### ~~P1-10~~ ✅ `daily-papers-notes/SKILL.md` 质量 check 与 paper-reader 模板 drift
+
+**发现于 2026-05-21 跑日报时**：daily-papers-notes 的 Step 2 质量验证要求 `## 实验结果` header，但 paper-reader 模板实际产出 `## 实验`——所有合格笔记都会被误判为不合格，触发"删除并重新生成"循环。
+
+**已修（同日）**：`skills/daily-papers-notes/SKILL.md:102` 改为"`## 实验`（或 `## 实验结果`）任一即可"。
+
+### ~~P1-11~~ ✅ `enrich_papers.py` 单 .json arg 语义 vs SKILL.md 不一致
+
+**发现于 2026-05-21 跑日报时**：脚本把单个位置 `.json` arg 解析为 input，但 SKILL.md 示例 `cat top30 | enrich.py enriched.json` 中 `enriched.json` 是预期的 output——一次调用，两种语义，导致脚本首次跑读不存在的文件失败。
+
+**已修（同日）**：`enrich_papers.py` 加 `stdin_piped = not sys.stdin.isatty()` 检测；当 stdin 有数据 + 1 arg 时，arg 当 OUTPUT；2 args 时保持 input+output 语义；auto-detect 默认输入文件仅在 stdin 未 pipe 时启用。4 种调用方式均验证通过。
 
 ---
 
