@@ -21,8 +21,10 @@ from pathlib import Path
 def _check_binary(name: str) -> None:
     if shutil.which(name) is None:
         raise RuntimeError(
-            f"{name} not installed; install poppler via `brew install poppler` "
-            f"(or your platform's equivalent)"
+            f"{name} not found on PATH. Install poppler-utils: "
+            f"macOS `brew install poppler` / "
+            f"Debian/Ubuntu `apt install poppler-utils` / "
+            f"Windows `choco install poppler`"
         )
 
 
@@ -70,13 +72,13 @@ def _extract_text_url(url: str, first_n_pages: int | None, timeout: int) -> str:
 
 
 def extract_text(
-    input,
+    source,
     first_n_pages: int | None = None,
     timeout: int = 30,
 ) -> str:
     """Extract plain text from a PDF.
 
-    `input`:
+    `source`:
       - URL string ('http://...' or 'https://...') → curl pipe
       - Path or str path                          → local pdftotext
 
@@ -87,10 +89,10 @@ def extract_text(
     Raises:  RuntimeError if pdftotext (or curl, for URL inputs) is not installed.
     """
     _check_binary("pdftotext")
-    if _is_url(input):
+    if _is_url(source):
         _check_binary("curl")
-        return _extract_text_url(input, first_n_pages, timeout)
-    return _extract_text_local(Path(input), first_n_pages, timeout)
+        return _extract_text_url(source, first_n_pages, timeout)
+    return _extract_text_local(Path(source), first_n_pages, timeout)
 
 
 def extract_images(

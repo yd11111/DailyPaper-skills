@@ -169,7 +169,9 @@
 - `old_pattern` / `new_text` 算了不用，实际 `re.sub`（line 171）用另一个 pattern
 - 看着像没做完的重构
 
-### P2-17：`docs/superpowers/plans/` 同时存 `*.md` + `*-COMPLETION.md`
+### ~~P2-17~~ ✅ `docs/superpowers/plans/` 同时存 `*.md` + `*-COMPLETION.md`
+
+**已修（2026-05-21）**：删除 4 份已 ship spec 的源 plan 文件，只保留 `*-COMPLETION.md` 记录。
 - 已 ship 的 spec 的源 plan 文件已无价值，留一份就够。考虑收尾时归档 plan，只保留 COMPLETION
 
 ### P2-18：`test_pipeline_guard.py:48` 用了已废弃的 `tempfile.mktemp()`
@@ -224,14 +226,14 @@
 
 ## 微清理（不开 spec，下次顺手做）
 
-- [ ] 删 `skills/_backup/hf-trending-removed-2026-05-20.md`（被 git 历史 + spec #1 完整覆盖）
+- [x] 删 `skills/_backup/hf-trending-removed-2026-05-20.md`（被 git 历史 + spec #1 完整覆盖）——已删除
 - [x] 删 spec #2 review 提到的 2 处 dead `import subprocess`：（P1-3 同 PR 顺手完成）
   - ~~`skills/library-import/build_manifest.py:21`~~
   - ~~`skills/daily-papers/download_note_images.py:16`~~
-- [ ] `extract_text(input, ...)` 参数改名 `source`，避免遮蔽 Python 内置（spec #2 review 提）
-- [ ] `_check_binary` 错误信息改成跨平台（不只 `brew install poppler`）
-- [ ] 设 `git config --global user.email/name` 消掉 auto-attribution 警告
-- [ ] 确认 `skills/daily-papers/__pycache__/` 在 `.gitignore` 里（审计观察到目录存在）
+- [x] `extract_text(input, ...)` 参数改名 `source`，避免遮蔽 Python 内置（spec #2 review 提）——已改，tests pass
+- [x] `_check_binary` 错误信息改成跨平台（不只 `brew install poppler`）——已改为 macOS/Debian/Windows 三平台提示
+- [x] 设 `git config --global user.email/name` 消掉 auto-attribution 警告——已设 yd11111 / 1784578480@qq.com
+- [x] 确认 `skills/daily-papers/__pycache__/` 在 `.gitignore` 里（审计观察到目录存在）——已确认：根 `.gitignore` 含 `__pycache__/` 规则
 
 ---
 
