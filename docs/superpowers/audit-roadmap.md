@@ -91,6 +91,13 @@
 
 **已修（同日）**：`enrich_papers.py` 加 `stdin_piped = not sys.stdin.isatty()` 检测；当 stdin 有数据 + 1 arg 时，arg 当 OUTPUT；2 args 时保持 input+output 语义；auto-detect 默认输入文件仅在 stdin 未 pipe 时启用。4 种调用方式均验证通过。
 
+### ~~Pipeline 自动化~~ ✅ 减少人工介入点
+
+**已修（2026-05-21）**：
+- `update_history.py`：修 weak regex + hardcoded path → 用 `daily_papers_dir()` + `arxiv_id.extract_all_ids`；写入 `daily-papers-review/SKILL.md` Phase 6 一行脚本调用
+- `backfill_links.py`：改进 method-name 归一化（`_normalize_name` 去 `-_.` + 小写）；写入 `daily-papers-notes/SKILL.md` Step 3 一行脚本调用
+- 流水线端到端验证：fetch(15) → enrich(15) → review(11) → guard pass → vault save → history update，全程零人工介入
+
 ---
 
 ## P2 审计发现（tech debt，应做）
@@ -218,9 +225,9 @@
 ## 微清理（不开 spec，下次顺手做）
 
 - [ ] 删 `skills/_backup/hf-trending-removed-2026-05-20.md`（被 git 历史 + spec #1 完整覆盖）
-- [ ] 删 spec #2 review 提到的 2 处 dead `import subprocess`：
-  - `skills/library-import/build_manifest.py:21`
-  - `skills/daily-papers/download_note_images.py:16`
+- [x] 删 spec #2 review 提到的 2 处 dead `import subprocess`：（P1-3 同 PR 顺手完成）
+  - ~~`skills/library-import/build_manifest.py:21`~~
+  - ~~`skills/daily-papers/download_note_images.py:16`~~
 - [ ] `extract_text(input, ...)` 参数改名 `source`，避免遮蔽 Python 内置（spec #2 review 提）
 - [ ] `_check_binary` 错误信息改成跨平台（不只 `brew install poppler`）
 - [ ] 设 `git config --global user.email/name` 消掉 auto-attribution 警告
@@ -230,8 +237,8 @@
 
 ## 阻塞中（等外部条件）
 
-- [ ] **arxiv-live smoke**：spec #1 / #2 / #3 都依赖一次真实 `今日论文推荐` 跑通来端到端验证。arxiv 429 限流清就自动验证
-- [ ] **spec #2 的 `extract_affiliations_pdf` 真实 arxiv smoke**：同上
+- [x] **arxiv-live smoke**：2026-05-21 端到端跑通（15 篇抓取 + 15 篇富化 + 11 篇点评 + guard pass + vault 保存 + history 更新），spec #1/#2/#3 均验证通过
+- [x] **spec #2 的 `extract_affiliations_pdf` 真实 arxiv smoke**：同上，9/15 篇获得 method_summary（PDF 提取正常工作）
 
 ---
 
