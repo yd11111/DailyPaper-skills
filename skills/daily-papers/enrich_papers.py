@@ -33,6 +33,7 @@ if str(_SHARED_DIR) not in sys.path:
     sys.path.insert(0, str(_SHARED_DIR))
 
 from user_config import temp_file_path
+import pdf_tools as _pdf_tools
 
 SEMAPHORE_LIMIT = 10
 CURL_TIMEOUT = 30
@@ -341,22 +342,30 @@ async def extract_affiliations_pdf(arxiv_id: str, sem: asyncio.Semaphore,
     for attempt in range(1, retries + 1):
         async with sem:
             try:
-                cmd = (
-                    f'curl -sL --max-time {CURL_TIMEOUT} "https://arxiv.org/pdf/{arxiv_id}"'
-                    f" | pdftotext -l 2 - -"
-                    f" | {sys.executable} {EXTRACT_AFFILIATIONS_SCRIPT}"
+                # Stage 1: fetch PDF text via centralized pdf_tools (spec #2).
+                text = await asyncio.to_thread(
+                    _pdf_tools.extract_text,
+                    f"https://arxiv.org/pdf/{arxiv_id}",
+                    2,           # first_n_pages
+                    CURL_TIMEOUT,
                 )
-                proc = await asyncio.create_subprocess_shell(
-                    cmd,
-                    stdout=asyncio.subprocess.PIPE,
-                    stderr=asyncio.subprocess.DEVNULL,
-                )
-                stdout, _ = await asyncio.wait_for(proc.communicate(), timeout=CURL_TIMEOUT + 15)
-                if stdout:
-                    data = json.loads(stdout.decode("utf-8", errors="replace"))
-                    affils = data.get("affiliations", [])
-                    if affils:
-                        return affils
+                if text:
+                    # Stage 2: pipe text into extract_affiliations.py via stdin.
+                    proc = await asyncio.create_subprocess_exec(
+                        sys.executable, EXTRACT_AFFILIATIONS_SCRIPT,
+                        stdin=asyncio.subprocess.PIPE,
+                        stdout=asyncio.subprocess.PIPE,
+                        stderr=asyncio.subprocess.DEVNULL,
+                    )
+                    stdout, _ = await asyncio.wait_for(
+                        proc.communicate(input=text.encode("utf-8")),
+                        timeout=CURL_TIMEOUT + 5,
+                    )
+                    if stdout:
+                        data = json.loads(stdout.decode("utf-8", errors="replace"))
+                        affils = data.get("affiliations", [])
+                        if affils:
+                            return affils
             except (asyncio.TimeoutError, json.JSONDecodeError, Exception) as e:
                 print(f"  [pdf] attempt {attempt}/{retries} failed {arxiv_id}: {e}", file=sys.stderr)
         if attempt < retries:

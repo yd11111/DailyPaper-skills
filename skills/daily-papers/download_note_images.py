@@ -22,6 +22,7 @@ if str(_SHARED_DIR) not in sys.path:
     sys.path.insert(0, str(_SHARED_DIR))
 
 from user_config import temp_file_path
+import pdf_tools as _pdf_tools
 
 CURL_TIMEOUT = 10
 CONCURRENCY = 5
@@ -135,7 +136,6 @@ async def try_pdf_extract(arxiv_id: str, assets_dir: Path, method_name: str,
     async with sem:
         try:
             pdf_path = str(temp_file_path(f"arxiv_{arxiv_id}.pdf"))
-            prefix = str(assets_dir / f"{method_name}_pdf_fig")
             # Download PDF if not cached
             if not Path(pdf_path).exists():
                 proc = await asyncio.create_subprocess_exec(
@@ -145,17 +145,13 @@ async def try_pdf_extract(arxiv_id: str, assets_dir: Path, method_name: str,
                     stderr=asyncio.subprocess.DEVNULL,
                 )
                 await asyncio.wait_for(proc.communicate(), timeout=35)
-            # Extract images with pdfimages
+            # Extract images via centralized pdf_tools (spec #2)
             if Path(pdf_path).exists():
-                proc = await asyncio.create_subprocess_exec(
-                    "pdfimages", "-png", pdf_path, prefix,
-                    stdout=asyncio.subprocess.DEVNULL,
-                    stderr=asyncio.subprocess.DEVNULL,
+                large = await asyncio.to_thread(
+                    _pdf_tools.extract_images,
+                    pdf_path, assets_dir, f"{method_name}_pdf_fig",
+                    10240,
                 )
-                await asyncio.wait_for(proc.communicate(), timeout=30)
-                # Find extracted images > 10KB
-                extracted = sorted(assets_dir.glob(f"{method_name}_pdf_fig-*.png"))
-                large = [f for f in extracted if f.stat().st_size > 10240]
                 if fig_num - 1 < len(large):
                     return large[fig_num - 1]
         except (asyncio.TimeoutError, Exception):
