@@ -48,7 +48,9 @@
 - **影响**：`extract_figure_url / extract_authors_html / extract_affiliations_html / extract_method_summary` 都是 regex；arxiv / HF 改 HTML 时静默退化为空 enrichment，pipeline 继续跑，用户只能凭"今天报告里没图"才发现
 - **修复方向**：fixture 一批 HTML 片段 + 5-8 个 parser 测试
 
-### P1-5：`fetch_and_score.merge_and_dedup` zero unit tests
+### ~~P1-5~~ ✅ `fetch_and_score.merge_and_dedup` zero unit tests
+
+**已修（2026-05-21）**：新建 `scripts/test_merge_dedup.py`，10 个场景测试覆盖 age filter / merge-by-id / history dedup / multi-day skip / min_score / backfill / top_n cap / fallback_ids。
 - **位置**：`skills/daily-papers/fetch_and_score.py:312-446`
 - **影响**：「只抓真新论文」的核心逻辑——age filter / history dedup / min score / backfill。一次回归就会静默放老论文进去（5-19 incident 就是这样发生的）
 - **修复方向**：fixture papers 数组 + 5-10 个 dedup 场景测试
