@@ -23,21 +23,17 @@ import sys
 from collections import Counter
 from pathlib import Path
 
+_SHARED_DIR = Path(__file__).resolve().parent.parent / "_shared"
+if str(_SHARED_DIR) not in sys.path:
+    sys.path.insert(0, str(_SHARED_DIR))
+import pdf_tools as _pdf_tools  # noqa: E402
+
 ARXIV_ID_RE = re.compile(r"\b(\d{4}\.\d{4,5})(?:v\d+)?\b")
 
 
 def extract_first_page(pdf_path: Path) -> str:
-    """用 pdftotext 抽首页。失败返回空串。"""
-    try:
-        r = subprocess.run(
-            ["pdftotext", "-l", "1", str(pdf_path), "-"],
-            capture_output=True,
-            text=True,
-            timeout=30,
-        )
-        return r.stdout if r.returncode == 0 else ""
-    except (subprocess.TimeoutExpired, FileNotFoundError):
-        return ""
+    """用 pdf_tools.extract_text 抽首页。失败返回空串。"""
+    return _pdf_tools.extract_text(pdf_path, first_n_pages=1, timeout=30)
 
 
 def find_arxiv_id(text: str) -> str | None:
