@@ -29,22 +29,29 @@ from user_config import obsidian_vault_path, paper_notes_dir
 NOTES_DIR = paper_notes_dir()
 
 
+def _normalize_name(name: str) -> str:
+    """Normalize method name for fuzzy matching.
+
+    Strips hyphens, underscores, spaces, dots, and lowercases.
+    E.g. "π0.5" → "π05", "F5-TTS" → "f5tts", "CosyVoice 2" → "cosyvoice2"
+    """
+    return re.sub(r'[-_.\s]+', '', name).lower()
+
+
 def scan_notes() -> dict:
-    """Scan notes directory and build index of {method_name: note_path}."""
+    """Scan notes directory and build index of {normalized_name: note_info}."""
     notes_index = {}
 
     if not NOTES_DIR.exists():
         return notes_index
 
-    # Scan all subdirectories (exclude _concept folder)
     for md_file in NOTES_DIR.rglob('*.md'):
-        # Skip concept notes
         if '_概念' in str(md_file):
             continue
 
-        # Use filename (without .md) as method name
         method_name = md_file.stem
-        notes_index[method_name.lower()] = {
+        key = _normalize_name(method_name)
+        notes_index[key] = {
             'name': method_name,
             'path': md_file.relative_to(NOTES_DIR.parent),
         }
@@ -102,7 +109,7 @@ def match_papers_with_notes(content: str, notes_index: dict) -> list:
             continue  # Already has note link
 
         # Try to match with existing notes
-        method_lower = method_name.lower()
+        method_lower = _normalize_name(method_name)
         if method_lower in notes_index:
             matches.append({
                 'paper_title': paper_title,
@@ -160,14 +167,7 @@ def update_diversion_table(recommendation_path: Path, notes_index: dict, matches
 
     # Update wikilinks for papers that have notes
     for match in matches:
-        # Find the paper in the table and update its wikilink
-        # Pattern: [[current_link]]（description）
-        old_pattern = rf'\[\[([^\]]+)\]\]（[^)]*{re.escape(match["method_name"])}[^)]*）'
-        new_text = f'[[{match["note_name"]}]]'
-
-        # Check if the link needs updating
-        if match['method_name'].lower() != match['note_name'].lower():
-            # Update the wikilink but keep the description
+        if _normalize_name(match['method_name']) != _normalize_name(match['note_name']):
             table_content = re.sub(
                 rf'\[\[{re.escape(match["method_name"])}\]\]',
                 f'[[{match["note_name"]}]]',

@@ -354,18 +354,13 @@ search_meta:
 
 保存后执行：
 
-1. **更新历史记录**：
-   - 读取 `{DAILY_PAPERS_PATH}/.history.json`（不存在则创建空数组）
-   - 提取本次推荐的所有 arXiv ID + 标题，追加为 `{"id": "XXXX", "date": "YYYY-MM-DD", "title": "..."}`
-   - **去重规则**：如果某个 arXiv ID 已存在于 history 中，保留**最早的 date**（不要用今天的日期覆盖）
-   - 只保留最近 30 天的记录（删除 date 早于 30 天前的条目）
-   - 写回 `.history.json`
-   - **完整性校验**（必须执行）：
-     1. 统计本次推荐文件中 `### N.` 开头的论文数量
-     2. 统计 `.history.json` 中 date 为今天的条目数量（即今天新增的论文）
-     3. 统计 `.history.json` 中 date 为今天之前、但在本次推荐中出现的论文数量（即再推的论文）
-     4. 验证：(今天新增) + (再推) 应该 >= 推荐文件中的论文数量
-     5. 如果不匹配，重新扫描推荐文件补全缺失的条目
+1. **更新历史记录**（调用脚本，不要手动操作 JSON）：
+
+```bash
+python3 update_history.py --from-recommendation "{DAILY_PAPERS_PATH}/YYYY-MM-DD-论文推荐.md" --date YYYY-MM-DD
+```
+
+脚本自动完成：提取 arXiv ID → 去重（保留最早 date）→ 裁剪 30 天以上旧条目 → 写回 `.history.json`。
 
 2. **可选的 git 自动化**：
 

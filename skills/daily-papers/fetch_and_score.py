@@ -27,6 +27,7 @@ _SHARED_DIR = Path(__file__).resolve().parent.parent / "_shared"
 if str(_SHARED_DIR) not in sys.path:
     sys.path.insert(0, str(_SHARED_DIR))
 
+from arxiv_id import extract_id as extract_arxiv_id, extract_all_ids
 from user_config import daily_papers_config, daily_papers_dir
 
 # ── Configuration ──────────────────────────────────────────────────────────
@@ -280,9 +281,6 @@ def fetch_arxiv_papers(start_date=None, end_date=None, days: int = 1) -> list[di
 # ── Merge & Dedup ──────────────────────────────────────────────────────────
 
 
-def extract_arxiv_id(url: str) -> str:
-    m = re.search(r"(\d{4}\.\d{4,5})", url)
-    return m.group(1) if m else ""
 
 
 def load_history() -> list[dict]:
@@ -302,8 +300,7 @@ def load_fallback_ids(days: int = 7) -> set[str]:
         if fpath.exists():
             try:
                 text = fpath.read_text()
-                for m in re.finditer(r"arxiv\.org/abs/(\d{4}\.\d{4,5})", text):
-                    ids.add(m.group(1))
+                ids.update(extract_all_ids(text))
             except IOError:
                 pass
     return ids

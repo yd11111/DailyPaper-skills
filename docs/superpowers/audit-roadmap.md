@@ -39,16 +39,9 @@
 
 ## P1 审计发现（latent bug / 安全 / 静默错乱，必做）
 
-### P1-3：`extract_arxiv_id` 重复实现 6 次且有一处 regex 偏弱
-- **位置**：
-  - `skills/daily-papers/fetch_and_score.py:283-285` → `r"(\d{4}\.\d{4,5})"`
-  - `skills/daily-papers/download_note_images.py:54-57` → 同上
-  - `skills/daily-papers/enrich_papers.py:392-393` → 同上（inline）
-  - `skills/daily-papers-review/update_history.py:58-61` → `r'arxiv\.org/abs/(\d+\.\d+)'` ⚠️ **更宽松**，会匹配 `arxiv.org/abs/1.2`
-  - `skills/_shared/pipeline_guard.py:32` → `r"arxiv\.org/abs/(\d{4}\.\d{4,5})"`
-  - `skills/library-import/build_manifest.py:31` → `r"\b(\d{4}\.\d{4,5})(?:v\d+)?\b"`（唯一处理 `v\d+` 的）
-- **影响**：`update_history.py` 的弱 regex 会把 `arxiv.org/abs/1.2` 这种 garbage 写进 `.history.json` 污染 dedup；每加一个 caller 又抄一份
-- **修复方向**：抽 `_shared/arxiv_id.py`：`extract_id(url) / extract_all_ids(text)`，统一支持 `vN` 后缀剥离
+### ~~P1-3~~ ✅ `extract_arxiv_id` 重复实现 6 次且有一处 regex 偏弱
+
+**已修（2026-05-21）**：创建 `_shared/arxiv_id.py`（`extract_id` + `extract_all_ids`），统一 `\b(\d{4}\.\d{4,5})(?:v\d+)?\b` 带 vN 剥离。7 个 caller 全部迁移：fetch_and_score / download_note_images / enrich_papers / update_history / pipeline_guard / build_manifest / paper_daemon。同时清理了 download_note_images + build_manifest 中的 dead `import subprocess`。
 
 ### P1-4：`enrich_papers.py` HTML 抽取 zero unit tests（584 行）
 - **位置**：`skills/daily-papers/enrich_papers.py:131-312`

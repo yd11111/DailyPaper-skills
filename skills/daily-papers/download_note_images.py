@@ -13,7 +13,6 @@ import asyncio
 import json
 import os
 import re
-import subprocess
 import sys
 from pathlib import Path
 
@@ -21,6 +20,7 @@ _SHARED_DIR = Path(__file__).resolve().parent.parent / "_shared"
 if str(_SHARED_DIR) not in sys.path:
     sys.path.insert(0, str(_SHARED_DIR))
 
+from arxiv_id import extract_id as extract_arxiv_id
 from user_config import temp_file_path
 import pdf_tools as _pdf_tools
 
@@ -51,10 +51,6 @@ def get_method_name(note_path: Path) -> str:
     return note_path.stem
 
 
-def extract_arxiv_id(url: str) -> str:
-    """Try to extract arxiv_id from a URL."""
-    m = re.search(r"(\d{4}\.\d{4,5})", url)
-    return m.group(1) if m else ""
 
 
 async def check_url(url: str, sem: asyncio.Semaphore) -> bool:

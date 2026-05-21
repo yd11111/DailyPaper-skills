@@ -36,6 +36,7 @@ _SHARED_DIR = Path(__file__).resolve().parents[1] / "_shared"
 if str(_SHARED_DIR) not in sys.path:
     sys.path.insert(0, str(_SHARED_DIR))
 
+from arxiv_id import extract_id as _extract_arxiv_id
 from user_config import concepts_dir, obsidian_vault_path, paper_notes_dir, zotero_db_path, zotero_storage_dir, temp_file_path
 
 # 配置
@@ -307,11 +308,10 @@ def get_paper_online_source(db_path: str, item_id: int) -> Optional[dict]:
     url = fields.get('url', '')
     if url:
         result['url'] = url
-        # 尝试从 URL 提取 arXiv ID
-        if 'arxiv.org' in url and 'arxiv_id' not in result:
-            match = re.search(r'arxiv\.org/(?:abs|pdf)/(\d{4}\.\d{4,5})', url)
-            if match:
-                result['arxiv_id'] = match.group(1)
+        if 'arxiv_id' not in result:
+            aid = _extract_arxiv_id(url)
+            if aid:
+                result['arxiv_id'] = aid
 
     return result if result else None
 

@@ -18,7 +18,6 @@ huangkiki/dailypaper-skills 的 paper-reader 设计：让 LLM 做语义判断，
 import argparse
 import json
 import re
-import subprocess
 import sys
 from collections import Counter
 from pathlib import Path
@@ -26,9 +25,8 @@ from pathlib import Path
 _SHARED_DIR = Path(__file__).resolve().parent.parent / "_shared"
 if str(_SHARED_DIR) not in sys.path:
     sys.path.insert(0, str(_SHARED_DIR))
+from arxiv_id import extract_id as _extract_arxiv_id  # noqa: E402
 import pdf_tools as _pdf_tools  # noqa: E402
-
-ARXIV_ID_RE = re.compile(r"\b(\d{4}\.\d{4,5})(?:v\d+)?\b")
 
 
 def extract_first_page(pdf_path: Path) -> str:
@@ -38,8 +36,7 @@ def extract_first_page(pdf_path: Path) -> str:
 
 def find_arxiv_id(text: str) -> str | None:
     """在文本中找 arxiv ID。返回首个匹配（最可能在 URL 或脚注里）。"""
-    m = ARXIV_ID_RE.search(text)
-    return m.group(1) if m else None
+    return _extract_arxiv_id(text) or None
 
 
 def main() -> int:

@@ -32,6 +32,7 @@ _SHARED_DIR = Path(__file__).resolve().parent.parent / "_shared"
 if str(_SHARED_DIR) not in sys.path:
     sys.path.insert(0, str(_SHARED_DIR))
 
+from arxiv_id import extract_id as _extract_arxiv_id
 from user_config import temp_file_path
 import pdf_tools as _pdf_tools
 
@@ -387,10 +388,7 @@ async def enrich_one(paper: dict, sem: asyncio.Semaphore) -> dict:
     """Enrich a single paper with metadata from HTML and abs pages."""
     arxiv_id = paper.get("arxiv_id", "")
     if not arxiv_id:
-        # Try to extract from URL
-        url = paper.get("url", "")
-        m = re.search(r"(\d{4}\.\d{4,5})", url)
-        arxiv_id = m.group(1) if m else ""
+        arxiv_id = _extract_arxiv_id(paper.get("url", ""))
     if not arxiv_id:
         return paper
 

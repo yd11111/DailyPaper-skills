@@ -31,9 +31,10 @@ _SHARED_DIR = Path(__file__).resolve().parent.parent / "_shared"
 if str(_SHARED_DIR) not in sys.path:
     sys.path.insert(0, str(_SHARED_DIR))
 
-from user_config import obsidian_vault_path, temp_file_path
+from arxiv_id import extract_id as _extract_arxiv_id, extract_all_ids
+from user_config import daily_papers_dir, temp_file_path
 
-HISTORY_FILE = obsidian_vault_path() / "DailyPapers" / ".history.json"
+HISTORY_FILE = daily_papers_dir() / ".history.json"
 DAYS_TO_KEEP = 30
 
 
@@ -55,10 +56,6 @@ def save_history(history: list):
         json.dump(history, f, ensure_ascii=False, indent=2)
 
 
-def extract_arxiv_id_from_url(url: str) -> str:
-    """Extract arXiv ID from URL."""
-    m = re.search(r'arxiv\.org/abs/(\d+\.\d+)', url)
-    return m.group(1) if m else ""
 
 
 def load_from_enriched(path: str) -> list:
@@ -71,7 +68,7 @@ def load_from_enriched(path: str) -> list:
         arxiv_id = p.get('arxiv_id', '')
         if not arxiv_id:
             url = p.get('url', '')
-            arxiv_id = extract_arxiv_id_from_url(url)
+            arxiv_id = _extract_arxiv_id(url)
 
         if arxiv_id:
             entries.append({
@@ -87,8 +84,7 @@ def load_from_recommendation(path: str) -> list:
     with open(path, 'r', encoding='utf-8') as f:
         content = f.read()
 
-    # Extract arXiv IDs from links
-    arxiv_ids = re.findall(r'arxiv\.org/abs/(\d+\.\d+)', content)
+    arxiv_ids = extract_all_ids(content)
 
     # Extract paper titles (### N. Title pattern)
     titles = {}

@@ -29,7 +29,11 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
-ARXIV_ID_RE = re.compile(r"arxiv\.org/abs/(\d{4}\.\d{4,5})")
+_SELF_DIR = Path(__file__).resolve().parent
+if str(_SELF_DIR) not in sys.path:
+    sys.path.insert(0, str(_SELF_DIR))
+
+from arxiv_id import extract_id as _extract_arxiv_id
 PAPER_SECTION_RE = re.compile(r"^### (\d+)\.\s*(.+)$", re.MULTILINE)
 EXISTING_NOTE_MARKER_RE = re.compile(r"📒\s*\*\*已有笔记\*\*\s*:\s*\[\[([^\]]+)\]\]")
 TRIPLE_BLOCK_HEADER_RE = re.compile(r"🧪[\s\*]*锐评依据")
@@ -69,8 +73,8 @@ def is_existing_note_paper(section_content: str) -> bool:
 
 
 def extract_arxiv_id(section_content: str) -> str | None:
-    m = ARXIV_ID_RE.search(section_content)
-    return m.group(1) if m else None
+    result = _extract_arxiv_id(section_content)
+    return result or None
 
 
 def check_date_cutoff(
@@ -242,9 +246,9 @@ def main() -> None:
 
     enriched_by_id: dict[str, dict] = {}
     for p in enriched:
-        m = ARXIV_ID_RE.search(p.get("url", ""))
-        if m:
-            enriched_by_id[m.group(1)] = p
+        aid = _extract_arxiv_id(p.get("url", ""))
+        if aid:
+            enriched_by_id[aid] = p
 
     sections = split_paper_sections(draft)
     existing_note_count = sum(1 for s in sections if is_existing_note_paper(s["content"]))
