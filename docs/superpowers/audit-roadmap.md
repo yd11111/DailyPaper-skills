@@ -43,7 +43,9 @@
 
 **已修（2026-05-21）**：创建 `_shared/arxiv_id.py`（`extract_id` + `extract_all_ids`），统一 `\b(\d{4}\.\d{4,5})(?:v\d+)?\b` 带 vN 剥离。7 个 caller 全部迁移：fetch_and_score / download_note_images / enrich_papers / update_history / pipeline_guard / build_manifest / paper_daemon。同时清理了 download_note_images + build_manifest 中的 dead `import subprocess`。
 
-### P1-4：`enrich_papers.py` HTML 抽取 zero unit tests（584 行）
+### ~~P1-4~~ ✅ `enrich_papers.py` HTML 抽取 zero unit tests（584 行）
+
+**已修（2026-05-21）**：新建 `scripts/test_enrich_html.py`，28 个测试覆盖 strip_tags / extract_figure_url（6 场景）/ extract_authors_html / extract_affiliations_html / extract_section_headers / extract_captions / extract_has_real_world / extract_method_names / extract_method_summary。
 - **位置**：`skills/daily-papers/enrich_papers.py:131-312`
 - **影响**：`extract_figure_url / extract_authors_html / extract_affiliations_html / extract_method_summary` 都是 regex；arxiv / HF 改 HTML 时静默退化为空 enrichment，pipeline 继续跑，用户只能凭"今天报告里没图"才发现
 - **修复方向**：fixture 一批 HTML 片段 + 5-8 个 parser 测试
