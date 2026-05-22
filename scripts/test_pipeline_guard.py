@@ -120,6 +120,31 @@ def test_enriched_data_missing():
     assert code == 2, f"expected exit 2 (guard error), got {code}"
 
 
+def test_empty_draft():
+    """Draft with 0 `### N.` sections → pass with 0 papers."""
+    code, report = run_guard("draft_empty.md", _tmp_json())
+    assert code == 0, f"expected exit 0, got {code}"
+    assert report["summary"]["stats"]["papers_in_draft"] == 0
+    assert report["summary"]["total_violations"] == 0
+
+
+def test_malformed_triples():
+    """Triples missing Evidence|Confidence pipe → count as 0 valid triples → C3 violation."""
+    code, report = run_guard("draft_malformed_triple.md", _tmp_json())
+    assert code == 1, f"expected exit 1, got {code}"
+    tr = [v for v in report["violations"] if v["check"] == "critique_evidence_triples"]
+    assert tr, "expected C3 violation for malformed triples"
+    assert tr[0]["triple_count"] == 0
+
+
+def test_enriched_no_url_field():
+    """enriched.json entries without `url` → guard still runs (skips C1 for those papers)."""
+    code, report = run_guard("draft_passing.md", _tmp_json(),
+                             enriched=FIX / "enriched_no_url.json")
+    assert code == 0, f"expected exit 0, got {code}"
+    assert report is not None
+
+
 TESTS = [
     test_passing_draft,
     test_date_cutoff_violation,
@@ -128,6 +153,9 @@ TESTS = [
     test_skip_existing_note_paper_for_c3,
     test_combined_violations,
     test_enriched_data_missing,
+    test_empty_draft,
+    test_malformed_triples,
+    test_enriched_no_url_field,
 ]
 
 

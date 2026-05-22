@@ -1,0 +1,17 @@
+[
+  {
+    "title": "PassingPaper One",
+    "date": "2026-05-15",
+    "source": "arxiv",
+    "score": 5,
+    "abstract": "A speech synthesis approach.",
+    "method_summary": "Uses Flow Matching for TTS.",
+    "method_names": ["FlowMatching"],
+    "section_headers": ["Introduction", "Method", "Experiments"],
+    "captions": [],
+    "has_real_world": false,
+    "figure_url": "",
+    "affiliations": "",
+    "authors": "Alice, Bob"
+  }
+]

@@ -7,7 +7,7 @@
 - **最后更新**：2026-05-22
 - **来源**：4 份 `*-COMPLETION.md` 的 "Pending follow-ups" + 一次完整代码审计
 - **维护方式**：完成一条就标 `[x]` 并写"由 spec #N 关闭"，不要删；累积形成历史
-- **当前进度**：P1 全部关闭（11/11）；P2 关闭 16/19（剩 P2-2、P2-3 wontfix、P2-8）；P3 关闭 4/9（P3-2/3/7/9）；测试 133 pass
+- **当前进度**：P1 全部关闭（11/11）；P2 关闭 16/19（剩 P2-2、P2-3 wontfix、P2-8）；P3 关闭 5/9（P3-2/3/7/8/9）；测试 139 pass
 
 ---
 
@@ -253,11 +253,12 @@
 
 **已修（2026-05-22）**：3 个旧 test 统一改为 `Path(__file__).resolve().parents[1]`，docstring 中 `Run:` 路径也改为相对。全部 8 个 test 文件现在都是可移植路径。
 
-### P3-8：`test_pipeline_guard.py` 测试 fixture 缺
-- 空 draft（0 个 `### N.` 段）
-- malformed `Claim/Evidence/Confidence` 行
-- enriched.json 无 `url` 字段（应该 safe 但没 fixture）
-- `--json-out` 失败时是否被新数据覆盖
+### ~~P3-8~~ ✅ `test_pipeline_guard.py` 测试 fixture 缺
+
+**已修（2026-05-22）**：新增 3 个边界用例 fixture + 测试：
+- `draft_empty.md`：0 个 `### N.` 段 → pass（0 papers）
+- `draft_malformed_triple.md`：不完整 Claim/Evidence/Confidence → C3 violation（triple_count=0）
+- `enriched_no_url.json`：无 `url` 字段 → guard 不崩溃，跳过 C1 匹配
 
 ### ~~P3-9~~ ✅ `test_pdf_tools.py` cargo-cult `importlib.reload`
 
