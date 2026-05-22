@@ -57,7 +57,9 @@
 - **影响**：「只抓真新论文」的核心逻辑——age filter / history dedup / min score / backfill。一次回归就会静默放老论文进去（5-19 incident 就是这样发生的）
 - **修复方向**：fixture papers 数组 + 5-10 个 dedup 场景测试
 
-### P1-6：`library-import/build_manifest.py` zero unit tests
+### ~~P1-6~~ ✅ `library-import/build_manifest.py` zero unit tests
+
+**已修（2026-05-22）**：新建 `scripts/test_build_manifest.py`，11 个测试覆盖 extract_first_page（valid/missing PDF）/ find_arxiv_id（4 场景）/ CLI JSON shape / topic 提取（subdir/root/_root）/ missing dir / empty dir。复用 spec #2 的 `sample.pdf` fixture。
 - **位置**：整个文件
 - **影响**：现状只有"用户跑没崩"算 pass；regex match / 重复名 / 缺 affiliations 等边界场景全靠肉眼
 - **修复方向**：fixture 2-3 个 PDF（可重用 spec #2 的 sample.pdf）+ JSON 形状断言
