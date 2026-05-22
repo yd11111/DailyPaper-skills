@@ -31,6 +31,8 @@ DEFAULT_CONFIG = {
         "paper_notes_folder": "论文笔记",
         "daily_papers_folder": "DailyPapers",
         "concepts_folder": "_概念",
+        "highlights_folder": "_创新亮点",
+        "compare_folder": "_对比报告",
         "zotero_db": "~/Zotero/zotero.sqlite",
         "zotero_storage": "~/Zotero/storage",
     },
@@ -49,6 +51,7 @@ DEFAULT_CONFIG = {
         "arxiv_categories": [],
         "min_score": 2,
         "top_n": 30,
+        "max_age_days": 7,
     },
     "automation": {
         "auto_refresh_indexes": True,
@@ -118,6 +121,18 @@ def daily_papers_dir() -> Path:
 
 def concepts_dir() -> Path:
     return paper_notes_dir() / paths_config()["concepts_folder"]
+
+
+def highlights_dir() -> Path:
+    return paper_notes_dir() / paths_config()["highlights_folder"]
+
+
+def compare_dir() -> Path:
+    return paper_notes_dir() / paths_config()["compare_folder"]
+
+
+def max_age_days() -> int:
+    return int(daily_papers_config().get("max_age_days", 7))
 
 
 def zotero_db_path() -> Path:

@@ -167,7 +167,9 @@
 **已修（2026-05-22）**：改为 `git add "DailyPapers/" "论文笔记/" "概念库/"`，只暂存本次产出目录。
 - 违反 git-safety 约定（可能暂存未跟踪敏感文件）。pin 到具体 path，跟 review skill 对齐
 
-### P2-12：`user-config.json` 有 `max_age_days / highlights_folder / compare_folder`，`DEFAULT_CONFIG` 没有
+### ~~P2-12~~ ✅ `user-config.json` 有 `max_age_days / highlights_folder / compare_folder`，`DEFAULT_CONFIG` 没有
+
+**已修（2026-05-22）**：`DEFAULT_CONFIG` 补齐 3 个缺失 key；新增 `highlights_dir()` / `compare_dir()` / `max_age_days()` 便捷函数。
 - 各文件用 `.get(..., default)` 散落 fallback，schema 实际住两处
 - 在 `user_config.py` 补 `highlights_dir() / compare_dir() / max_age_days()` 便捷函数
 
@@ -204,7 +206,9 @@
 - TOCTOU 风险（测试场景影响低，但模式不该传播）
 - 换 `tempfile.NamedTemporaryFile(delete=False)` 或 `tempfile.mkstemp()[1]`
 
-### P2-19：`test_fetch_no_trending.py` 是 7 个静态字符串断言
+### ~~P2-19~~ ✅ `test_fetch_no_trending.py` 是 7 个静态字符串断言
+
+**已修（2026-05-22，由 P1-5 关闭）**：`test_merge_dedup.py` 提供了 10 个真正的行为测试覆盖 `fetch_and_score` 核心逻辑。`test_fetch_no_trending.py` 保留作为"永不引入 trending"的 tripwire。
 - 都在查"字面量 'trending' 不出现"或"kwarg 被拒绝"
 - 当"别再引入 HF Trending"的 tripwire 有效，但**完全没覆盖 `fetch_and_score` 的真实行为**
 - 跟 P1-5 一起做
