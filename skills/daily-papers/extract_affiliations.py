@@ -10,32 +10,13 @@ Output:
 import json
 import re
 import sys
+from pathlib import Path
 
+_SHARED_DIR = Path(__file__).resolve().parent.parent / "_shared"
+if str(_SHARED_DIR) not in sys.path:
+    sys.path.insert(0, str(_SHARED_DIR))
 
-# ── Institution keywords (case-insensitive matching) ──────────────────────
-INST_KEYWORDS = [
-    # Generic
-    "university", "universite", "università", "universität",
-    "institute", "laboratory", "college", "school of",
-    "center for", "centre for", "academy", "polytechnic",
-    "department of", "faculty of", "research center", "research centre",
-    "national lab",
-    # Companies / Industry
-    "google", "nvidia", "meta ai", "meta platforms", "microsoft",
-    "deepmind", "openai", "alibaba", "tencent", "baidu", "bytedance",
-    "amazon", "apple", "samsung", "huawei", "intel", "qualcomm",
-    "adobe", "salesforce", "ibm research", "uber", "waymo", "toyota",
-    "sony", "bosch", "damo academy",
-    # Well-known abbreviations / names (word-boundary aware)
-    "mit ", "csail", "stanford", "berkeley", "cmu", "caltech",
-    "eth zurich", "eth zürich", "epfl", "kaist", "inria", "mpi ",
-    "fair ", "max planck", "cnrs",
-    # Chinese universities / orgs
-    "tsinghua", "peking", "westlake", "hkust", "hku ", "fudan",
-    "sjtu", "zju", "nju", "ustc", "cuhk", "shanghaitech",
-    "chinese academy", "shanghai ai", "nanjing university",
-    "nankai", "south china",
-]
+from affiliation_keywords import INST_KEYWORDS
 
 # Header boundary markers — stop extracting when we see these
 HEADER_STOP = [

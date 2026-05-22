@@ -108,7 +108,9 @@
 
 ## P2 审计发现（tech debt，应做）
 
-### P2-1：`INST_KEYWORDS` 机构关键词列表重复
+### ~~P2-1~~ ✅ `INST_KEYWORDS` 机构关键词列表重复
+
+**已修（2026-05-22）**：抽取 `_shared/affiliation_keywords.py`，`enrich_papers.py` 和 `extract_affiliations.py` 均改为 import。
 - `skills/daily-papers/enrich_papers.py:79-97` + `skills/daily-papers/extract_affiliations.py:16-38`
 - 加一个学校要改两处。抽 `_shared/affiliation_keywords.py`
 

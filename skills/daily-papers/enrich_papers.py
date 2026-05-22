@@ -32,6 +32,7 @@ _SHARED_DIR = Path(__file__).resolve().parent.parent / "_shared"
 if str(_SHARED_DIR) not in sys.path:
     sys.path.insert(0, str(_SHARED_DIR))
 
+from affiliation_keywords import INST_KEYWORDS
 from arxiv_id import extract_id as _extract_arxiv_id
 from user_config import temp_file_path
 import pdf_tools as _pdf_tools
@@ -76,26 +77,6 @@ REAL_WORLD_KEYWORDS = [
     "real-world result", "real-world task", "real-world environment",
 ]
 
-# ── Institution keywords for HTML affiliation extraction ────────────────────
-INST_KEYWORDS = [
-    "university", "universite", "università", "universität",
-    "institute", "laboratory", "college", "school of",
-    "center for", "centre for", "academy", "polytechnic",
-    "department of", "faculty of", "research center", "research centre",
-    "national lab",
-    "google", "nvidia", "meta ai", "meta platforms", "microsoft",
-    "deepmind", "openai", "alibaba", "tencent", "baidu", "bytedance",
-    "amazon", "apple", "samsung", "huawei", "intel", "qualcomm",
-    "adobe", "salesforce", "ibm research", "uber", "waymo", "toyota",
-    "sony", "bosch", "damo academy",
-    "mit ", "csail", "stanford", "berkeley", "cmu", "caltech",
-    "eth zurich", "eth zürich", "epfl", "kaist", "inria", "mpi ",
-    "fair ", "max planck", "cnrs",
-    "tsinghua", "peking", "westlake", "hkust", "hku ", "fudan",
-    "sjtu", "zju", "nju", "ustc", "cuhk", "shanghaitech",
-    "chinese academy", "shanghai ai", "nanjing university",
-    "nankai", "south china",
-]
 
 
 # ══════════════════════════════════════════════════════════════════════════════
