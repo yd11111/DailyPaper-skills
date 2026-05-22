@@ -1,12 +1,10 @@
 #!/usr/bin/env python3
 """
-Zotero 数据库查询辅助脚本
+Zotero 数据库查询辅助脚本（CLI 工具）
 用于 paper-reader skill 的 Zotero 集成
 """
 
 import sqlite3
-import os
-import shutil
 import argparse
 import sys
 from pathlib import Path
@@ -15,44 +13,15 @@ _SHARED_DIR = Path(__file__).resolve().parents[2] / "_shared"
 if str(_SHARED_DIR) not in sys.path:
     sys.path.insert(0, str(_SHARED_DIR))
 
-from user_config import zotero_db_path, zotero_storage_dir, temp_file_path
+import zotero_db as _zotero
+from user_config import zotero_db_path
 
-# 默认配置
 ZOTERO_DB = zotero_db_path()
-STORAGE_DIR = zotero_storage_dir()
-ZOTERO_DIR = ZOTERO_DB.parent
-TEMP_DB = temp_file_path("zotero_readonly.sqlite")
 
 
 def copy_db():
     """复制数据库以避免锁定"""
-    shutil.copy(ZOTERO_DB, TEMP_DB)
-    return sqlite3.connect(TEMP_DB)
-
-
-def get_all_child_collections(conn, collection_id: int) -> list[int]:
-    """递归获取所有子分类ID（包含自身）"""
-    cursor = conn.cursor()
-    cursor.execute("SELECT collectionID, parentCollectionID FROM collections")
-    all_collections = cursor.fetchall()
-
-    # 构建父子关系映射
-    children_map = {}
-    for cid, parent_id in all_collections:
-        if parent_id not in children_map:
-            children_map[parent_id] = []
-        children_map[parent_id].append(cid)
-
-    # 递归收集所有子分类
-    result = [collection_id]
-    def collect_children(cid):
-        if cid in children_map:
-            for child_id in children_map[cid]:
-                result.append(child_id)
-                collect_children(child_id)
-
-    collect_children(collection_id)
-    return result
+    return _zotero.copy_readonly()
 
 
 def list_collections(conn):
@@ -80,7 +49,7 @@ def list_papers_in_collection(conn, collection_id, recursive=False):
     cursor = conn.cursor()
 
     if recursive:
-        collection_ids = get_all_child_collections(conn, collection_id)
+        collection_ids = _zotero.get_all_child_collections(conn, collection_id)
         placeholders = ','.join('?' * len(collection_ids))
         query = f"""
             SELECT DISTINCT i.itemID, idv.value as title,
@@ -156,64 +125,26 @@ def search_paper(conn, keyword):
 
 
 def get_pdf_path(conn, item_id):
-    """获取论文 PDF 路径"""
-    cursor = conn.cursor()
-    cursor.execute("""
-        SELECT ia.path, items.key,
-               (SELECT value FROM itemData id
-                JOIN itemDataValues idv ON id.valueID = idv.valueID
-                JOIN fields f ON id.fieldID = f.fieldID
-                WHERE id.itemID = ia.parentItemID AND f.fieldName = 'title') as title
-        FROM itemAttachments ia
-        JOIN items ON ia.itemID = items.itemID
-        WHERE ia.parentItemID = ? AND ia.contentType = 'application/pdf'
-    """, (item_id,))
-
-    row = cursor.fetchone()
-    if row:
-        path, key, title = row
-        if path and path.startswith('storage:'):
-            filename = path.replace('storage:', '')
-            full_path = STORAGE_DIR / key / filename
-            print(f"标题: {title}")
-            print(f"PDF路径: {full_path}")
-            if full_path.exists():
-                print(f"文件存在: Yes")
-                return str(full_path)
-            else:
-                print(f"文件存在: No")
+    """获取论文 PDF 路径（带 CLI 输出）"""
+    pdf_path = _zotero.get_pdf_path(conn, item_id)
+    if pdf_path:
+        fields = _zotero.get_item_fields(conn, item_id)
+        print(f"标题: {fields.get('title', 'Unknown')}")
+        print(f"PDF路径: {pdf_path}")
+        print(f"文件存在: Yes")
     else:
         print(f"未找到 itemID={item_id} 的 PDF 附件")
-    return None
+    return pdf_path
 
 
 def get_collection_path(conn, collection_id):
     """获取分类的完整路径"""
-    cursor = conn.cursor()
-    cursor.execute("SELECT collectionID, collectionName, parentCollectionID FROM collections")
-    collections = {row[0]: {'name': row[1], 'parent': row[2]} for row in cursor.fetchall()}
-
-    path_parts = []
-    current = collection_id
-    while current:
-        if current in collections:
-            path_parts.insert(0, collections[current]['name'])
-            current = collections[current]['parent']
-        else:
-            break
-    return '/'.join(path_parts)
+    return _zotero.get_collection_path(conn, collection_id)
 
 
 def get_item_collections(conn, item_id):
     """获取论文所在的所有分类"""
-    cursor = conn.cursor()
-    cursor.execute("""
-        SELECT c.collectionID, c.collectionName
-        FROM collections c
-        JOIN collectionItems ci ON c.collectionID = ci.collectionID
-        WHERE ci.itemID = ?
-    """, (item_id,))
-    return cursor.fetchall()
+    return _zotero.get_item_collections(conn, item_id)
 
 
 def add_to_collection_db(item_id, collection_id):
@@ -282,7 +213,7 @@ def move_to_collection(item_id, new_collection_id, old_collection_id=None):
 
 
 def find_collection_by_name(conn, name):
-    """根据名称查找分类"""
+    """根据名称查找分类（模糊匹配，显示所有结果）"""
     cursor = conn.cursor()
     cursor.execute("""
         SELECT collectionID, collectionName, parentCollectionID
@@ -291,39 +222,17 @@ def find_collection_by_name(conn, name):
     """, (f"%{name}%",))
     results = cursor.fetchall()
     for r in results:
-        path = get_collection_path(conn, r[0])
+        path = _zotero.get_collection_path(conn, r[0])
         print(f"ID: {r[0]}, 路径: {path}")
     return results
 
 
 def get_paper_info(conn, item_id):
     """获取论文详细信息"""
-    cursor = conn.cursor()
-
-    # 获取标题
-    cursor.execute("""
-        SELECT idv.value
-        FROM itemData id
-        JOIN itemDataValues idv ON id.valueID = idv.valueID
-        JOIN fields f ON id.fieldID = f.fieldID
-        WHERE id.itemID = ? AND f.fieldName = 'title'
-    """, (item_id,))
-    title_row = cursor.fetchone()
-    title = title_row[0] if title_row else "Unknown"
-
-    # 获取其他字段
-    cursor.execute("""
-        SELECT f.fieldName, idv.value
-        FROM itemData id
-        JOIN itemDataValues idv ON id.valueID = idv.valueID
-        JOIN fields f ON id.fieldID = f.fieldID
-        WHERE id.itemID = ?
-    """, (item_id,))
-    fields = {row[0]: row[1] for row in cursor.fetchall()}
-
-    # 获取所在分类
-    collections = get_item_collections(conn, item_id)
-    collection_paths = [get_collection_path(conn, c[0]) for c in collections]
+    fields = _zotero.get_item_fields(conn, item_id)
+    title = fields.get("title", "Unknown")
+    collections = _zotero.get_item_collections(conn, item_id)
+    collection_paths = [_zotero.get_collection_path(conn, c[0]) for c in collections]
 
     print(f"ItemID: {item_id}")
     print(f"标题: {title}")

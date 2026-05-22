@@ -7,7 +7,7 @@
 - **最后更新**：2026-05-22
 - **来源**：4 份 `*-COMPLETION.md` 的 "Pending follow-ups" + 一次完整代码审计
 - **维护方式**：完成一条就标 `[x]` 并写"由 spec #N 关闭"，不要删；累积形成历史
-- **当前进度**：P1 全部关闭（11/11）；P2 关闭 16/19（剩 P2-2、P2-3 wontfix、P2-8）；P3 关闭 6/9（P3-2/3/4/7/8/9）；测试 136 pass
+- **当前进度**：P1 全部关闭（11/11）；P2 关闭 17/19（剩 P2-3 wontfix、P2-8）；P3 关闭 6/9（P3-2/3/4/7/8/9）；测试 136 pass
 
 ---
 
@@ -116,10 +116,12 @@
 - `skills/daily-papers/enrich_papers.py:79-97` + `skills/daily-papers/extract_affiliations.py:16-38`
 - 加一个学校要改两处。抽 `_shared/affiliation_keywords.py`
 
-### P2-2：Zotero DB 辅助函数 2 处复制
-- `paper-reader/paper_daemon.py` + `paper-reader/assets/zotero_helper.py`（`reorganize_notes.py` 已被 P1-9 删除）
-- 两份各自实现 `copy_db` / `get_all_child_collections` / `get_pdf_path`，API 风格不同（daemon 传 db_path str，helper 传 conn）
-- 抽 `_shared/zotero_db.py` 统一接口；daemon 有 6 个 Zotero 函数，helper 有 13 个，共约 5 个重叠
+### ~~P2-2~~ ✅ Zotero DB 辅助函数 2 处复制
+
+**已修（2026-05-22）**：新建 `_shared/zotero_db.py`（8 个共享函数：`copy_readonly` / `get_all_child_collections` / `get_collection_path` / `find_collection` / `get_papers_in_collection` / `get_pdf_path` / `get_item_fields` / `get_item_collections`）。两个 caller 统一为 connection-passing 模式：
+- `paper_daemon.py`：删除 5 个重复 Zotero 函数（-80 行），改为 4 个 thin wrappers 委托到 `_zotero`
+- `zotero_helper.py`：删除 `copy_db` / `get_all_child_collections` / `get_collection_path` / `get_item_collections` 重复实现，`get_pdf_path` / `get_paper_info` / `find_collection_by_name` 改为委托 + CLI 输出层
+- 写操作（`add_to_collection_db` / `remove_from_collection_db`）保留在 helper（直连真实 DB）
 
 ### P2-3：`sys.path` bootstrap 在 10 个文件里 copy-paste — **wontfix**
 - 同样的 3 行 `_SHARED_DIR = ... / sys.path.insert(0, ...)` 出现 11 次

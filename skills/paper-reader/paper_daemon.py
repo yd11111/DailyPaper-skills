@@ -20,9 +20,7 @@ Paper Reading Daemon - 后台论文阅读守护进程
 import os
 import sys
 import json
-import sqlite3
 import subprocess
-import shutil
 import time
 import argparse
 import logging
@@ -38,11 +36,11 @@ if str(_SHARED_DIR) not in sys.path:
 
 from arxiv_id import extract_id as _extract_arxiv_id
 from method_name import normalize as _normalize_method_name_shared
-from user_config import concepts_dir, obsidian_vault_path, paper_notes_dir, zotero_db_path, zotero_storage_dir, temp_file_path
+from user_config import concepts_dir, obsidian_vault_path, paper_notes_dir, temp_file_path
+import zotero_db as _zotero
 
 # 配置
-ZOTERO_DB = str(zotero_db_path())
-ZOTERO_STORAGE = str(zotero_storage_dir())
+ZOTERO_STORAGE = str(_zotero.ZOTERO_STORAGE)
 OBSIDIAN_VAULT = str(obsidian_vault_path())
 PAPER_NOTES_ROOT = str(paper_notes_dir())
 CONCEPTS_ROOT = str(concepts_dir())
@@ -151,135 +149,34 @@ def parse_reset_wait_seconds(message: str) -> Optional[int]:
     return max(60, wait_seconds)
 
 
-def copy_zotero_db() -> str:
-    """复制 Zotero 数据库以避免锁定"""
-    tmp_db = str(temp_file_path("zotero_readonly.sqlite"))
-    shutil.copy(ZOTERO_DB, tmp_db)
-    return tmp_db
+def copy_zotero_db():
+    """复制 Zotero 数据库以避免锁定，返回连接"""
+    return _zotero.copy_readonly()
 
 
-def get_collection_id_and_path(db_path: str, collection_name: str) -> tuple[Optional[int], Optional[str]]:
+def get_collection_id_and_path(conn, collection_name: str) -> tuple[Optional[int], Optional[str]]:
     """根据分类名称获取 ID 和完整路径"""
-    conn = sqlite3.connect(db_path)
-    cursor = conn.cursor()
-
-    cursor.execute("SELECT collectionID, collectionName, parentCollectionID FROM collections")
-    collections = {row[0]: {'name': row[1], 'parent': row[2]} for row in cursor.fetchall()}
-
-    def get_path(cid):
-        path_parts = []
-        current = cid
-        while current:
-            if current in collections:
-                path_parts.insert(0, collections[current]['name'])
-                current = collections[current]['parent']
-            else:
-                break
-        return '/'.join(path_parts)
-
-    for cid, info in collections.items():
-        if info['name'].lower() == collection_name.lower():
-            conn.close()
-            return cid, get_path(cid)
-        if collection_name.lower() in info['name'].lower():
-            conn.close()
-            return cid, get_path(cid)
-
-    conn.close()
-    return None, None
+    return _zotero.find_collection(conn, collection_name)
 
 
-def get_all_child_collections(db_path: str, collection_id: int) -> list[int]:
-    """递归获取所有子分类ID（包含自身）"""
-    conn = sqlite3.connect(db_path)
-    cursor = conn.cursor()
-    cursor.execute("SELECT collectionID, parentCollectionID FROM collections")
-    all_collections = cursor.fetchall()
-    conn.close()
-
-    children_map = {}
-    for cid, parent_id in all_collections:
-        if parent_id not in children_map:
-            children_map[parent_id] = []
-        children_map[parent_id].append(cid)
-
-    result = [collection_id]
-    def collect_children(cid):
-        if cid in children_map:
-            for child_id in children_map[cid]:
-                result.append(child_id)
-                collect_children(child_id)
-
-    collect_children(collection_id)
-    return result
-
-
-def get_papers_in_collection(db_path: str, collection_id: int) -> list[dict]:
+def get_papers_in_collection(conn, collection_id: int) -> list[dict]:
     """获取分类下的所有论文（递归包含子分类）"""
-    conn = sqlite3.connect(db_path)
-    cursor = conn.cursor()
-
-    collection_ids = get_all_child_collections(db_path, collection_id)
-    placeholders = ','.join('?' * len(collection_ids))
-    query = f"""
-        SELECT DISTINCT i.itemID, idv.value as title
-        FROM items i
-        JOIN collectionItems ci ON i.itemID = ci.itemID
-        JOIN itemData id ON i.itemID = id.itemID
-        JOIN itemDataValues idv ON id.valueID = idv.valueID
-        JOIN fields f ON id.fieldID = f.fieldID
-        WHERE ci.collectionID IN ({placeholders}) AND f.fieldName = 'title' AND i.itemTypeID != 14
-    """
-    cursor.execute(query, collection_ids)
-    logger.info(f"递归查询，包含 {len(collection_ids)} 个分类")
-
-    papers = [{'item_id': row[0], 'title': row[1]} for row in cursor.fetchall()]
-    conn.close()
+    papers = _zotero.get_papers_in_collection(conn, collection_id, recursive=True)
+    logger.info(f"递归查询，包含 {len(_zotero.get_all_child_collections(conn, collection_id))} 个分类")
     return papers
 
 
-def get_pdf_path(db_path: str, item_id: int) -> Optional[str]:
+def get_pdf_path(conn, item_id: int) -> Optional[str]:
     """获取论文的 PDF 路径"""
-    conn = sqlite3.connect(db_path)
-    cursor = conn.cursor()
-
-    cursor.execute("""
-        SELECT ia.path, items.key
-        FROM itemAttachments ia
-        JOIN items ON ia.itemID = items.itemID
-        WHERE ia.parentItemID = ? AND ia.contentType = 'application/pdf'
-    """, (item_id,))
-
-    row = cursor.fetchone()
-    conn.close()
-
-    if row:
-        path, key = row
-        if path and path.startswith('storage:'):
-            filename = path.replace('storage:', '')
-            return os.path.join(ZOTERO_STORAGE, key, filename)
-    return None
+    return _zotero.get_pdf_path(conn, item_id)
 
 
-def get_paper_online_source(db_path: str, item_id: int) -> Optional[dict]:
+def get_paper_online_source(conn, item_id: int) -> Optional[dict]:
     """
     获取论文的在线来源信息（arXiv ID、DOI、URL）
     用于处理没有 PDF 的论文
     """
-    conn = sqlite3.connect(db_path)
-    cursor = conn.cursor()
-
-    # 获取论文的各种字段
-    cursor.execute("""
-        SELECT f.fieldName, idv.value
-        FROM itemData id
-        JOIN fields f ON id.fieldID = f.fieldID
-        JOIN itemDataValues idv ON id.valueID = idv.valueID
-        WHERE id.itemID = ?
-    """, (item_id,))
-
-    fields = {row[0]: row[1] for row in cursor.fetchall()}
-    conn.close()
+    fields = _zotero.get_item_fields(conn, item_id)
 
     result = {}
 
@@ -591,16 +488,17 @@ def process_collection(collection_name: str, resume: bool = True):
     """处理整个分类的论文"""
     logger.info(f"=== 开始处理分类: {collection_name} ===")
 
-    db_path = copy_zotero_db()
+    conn = copy_zotero_db()
 
-    collection_id, collection_path = get_collection_id_and_path(db_path, collection_name)
+    collection_id, collection_path = get_collection_id_and_path(conn, collection_name)
     if not collection_id:
         logger.error(f"找不到分类: {collection_name}")
+        conn.close()
         return
 
     logger.info(f"分类路径: {collection_path} (ID: {collection_id})")
 
-    papers = get_papers_in_collection(db_path, collection_id)
+    papers = get_papers_in_collection(conn, collection_id)
     logger.info(f"分类下共有 {len(papers)} 篇论文")
 
     progress = load_progress() if resume else {'completed': [], 'failed': [], 'current': None, 'started_at': None}
@@ -628,14 +526,14 @@ def process_collection(collection_name: str, resume: bool = True):
             progress['completed'].append(item_id)  # 标记为已完成
             continue
 
-        pdf_path = get_pdf_path(db_path, item_id)
+        pdf_path = get_pdf_path(conn, item_id)
         paper_source = {'title': title}
 
         if pdf_path and os.path.exists(pdf_path):
             paper_source['pdf_path'] = pdf_path
         else:
             # 尝试获取在线来源
-            online_source = get_paper_online_source(db_path, item_id)
+            online_source = get_paper_online_source(conn, item_id)
             if online_source:
                 paper_source.update(online_source)
                 logger.info(f"无本地 PDF，使用在线来源: {list(online_source.keys())}")
@@ -644,6 +542,8 @@ def process_collection(collection_name: str, resume: bool = True):
                 continue
 
         pending.append({**paper, 'source': paper_source})
+
+    conn.close()
 
     if skipped_existing > 0:
         logger.info(f"跳过已有笔记: {skipped_existing} 篇")
@@ -742,8 +642,7 @@ def main():
         return
 
     if args.list:
-        db_path = copy_zotero_db()
-        conn = sqlite3.connect(db_path)
+        conn = copy_zotero_db()
         cursor = conn.cursor()
         cursor.execute("""
             SELECT c.collectionName, COUNT(ci.itemID) as count
