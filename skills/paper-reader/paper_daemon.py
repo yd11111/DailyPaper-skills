@@ -37,6 +37,7 @@ if str(_SHARED_DIR) not in sys.path:
     sys.path.insert(0, str(_SHARED_DIR))
 
 from arxiv_id import extract_id as _extract_arxiv_id
+from method_name import normalize as _normalize_method_name_shared
 from user_config import concepts_dir, obsidian_vault_path, paper_notes_dir, zotero_db_path, zotero_storage_dir, temp_file_path
 
 # 配置
@@ -69,15 +70,6 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-_SUBSCRIPT_TRANSLATION = str.maketrans("₀₁₂₃₄₅₆₇₈₉₊₋", "0123456789+-")
-_GREEK_REPLACEMENTS = {
-    "π": "pi",
-    "ϕ": "phi",
-    "φ": "phi",
-    "α": "alpha",
-    "β": "beta",
-    "γ": "gamma",
-}
 
 
 def acquire_lock() -> bool:
@@ -365,11 +357,7 @@ def title_matches_note(title: str, existing_notes: dict[str, str]) -> bool:
 
 
 def _normalize_method_name(value: str) -> str:
-    normalized = value.strip().lower().translate(_SUBSCRIPT_TRANSLATION)
-    for source, target in _GREEK_REPLACEMENTS.items():
-        normalized = normalized.replace(source, target)
-    normalized = normalized.replace("&", "and")
-    return re.sub(r"[^a-z0-9]+", "", normalized)
+    return _normalize_method_name_shared(value)
 
 
 def _extract_note_method_names(stem: str) -> set[str]:

@@ -24,18 +24,10 @@ _SHARED_DIR = Path(__file__).resolve().parent.parent / "_shared"
 if str(_SHARED_DIR) not in sys.path:
     sys.path.insert(0, str(_SHARED_DIR))
 
+from method_name import normalize as _normalize_name
 from user_config import obsidian_vault_path, paper_notes_dir
 
 NOTES_DIR = paper_notes_dir()
-
-
-def _normalize_name(name: str) -> str:
-    """Normalize method name for fuzzy matching.
-
-    Strips hyphens, underscores, spaces, dots, and lowercases.
-    E.g. "π0.5" → "π05", "F5-TTS" → "f5tts", "CosyVoice 2" → "cosyvoice2"
-    """
-    return re.sub(r'[-_.\s]+', '', name).lower()
 
 
 def scan_notes() -> dict:

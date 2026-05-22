@@ -129,7 +129,9 @@
 - 一个常量叫 `HISTORY_PATH`、一个叫 `HISTORY_FILE`，指同一文件
 - 抽 `_shared/history_store.py`：`load() / append(entries, date) / prune(days)`
 
-### P2-5：method 名归一化逻辑分叉
+### ~~P2-5~~ ✅ method 名归一化逻辑分叉
+
+**已修（2026-05-22）**：新建 `_shared/method_name.py`（`normalize()`），统一 subscript/Greek/&/标点处理。`paper_daemon.py` 和 `backfill_links.py` 均改为 import，backfill_links 获得了 π0.5 等场景的正确匹配能力。
 - `paper_daemon.py:367-372` 处理下标 / 希腊字母 / `&→and` / 标点
 - `backfill_links.py:46-47,105` 只 `.lower()`
 - 后果：`π0.5.md` 在 paper_daemon 能匹配，在 backfill 永远匹配不上
