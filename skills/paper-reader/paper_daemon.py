@@ -559,11 +559,13 @@ $$公式$$
 请直接开始处理，不需要确认。提取所有公式、图片和表格。"""
 
     try:
+        # Trust model: paper_source fields (title, pdf_path, arxiv_id) come from
+        # local Zotero DB — not external input. Args passed as list (no shell injection).
         result = subprocess.run(
             ['claude', '-p', prompt, '--model', 'opus', '--permission-mode', 'acceptEdits', '--dangerously-skip-permissions'],
             capture_output=True,
             text=True,
-            timeout=900  # 15分钟超时（因为要提取图片）
+            timeout=900
         )
 
         output = result.stdout + result.stderr

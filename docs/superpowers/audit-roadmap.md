@@ -7,7 +7,7 @@
 - **最后更新**：2026-05-22
 - **来源**：4 份 `*-COMPLETION.md` 的 "Pending follow-ups" + 一次完整代码审计
 - **维护方式**：完成一条就标 `[x]` 并写"由 spec #N 关闭"，不要删；累积形成历史
-- **当前进度**：P1 全部关闭（11/11）；P2 关闭 16/19（剩 P2-2、P2-3 wontfix、P2-8）；P3 关闭 5/9（P3-2/3/7/8/9）；测试 139 pass
+- **当前进度**：P1 全部关闭（11/11）；P2 关闭 16/19（剩 P2-2、P2-3 wontfix、P2-8）；P3 关闭 6/9（P3-2/3/4/7/8/9）；测试 136 pass
 
 ---
 
@@ -239,9 +239,9 @@
 
 **已修（2026-05-22）**：新建 `scripts/test_extract_affiliations.py`，33 个测试覆盖 extract_header（3 场景）/ is_noise（7 场景）/ looks_like_sentence（4 场景）/ has_inst_keyword（4 场景含 word-boundary）/ clean_affiliation（4 场景）/ split_numbered_affiliations（3 场景）/ _is_author_line（4 场景）/ extract_affiliations integration（4 场景含 dedup/empty）。
 
-### P3-4：`paper_daemon.py:574` 子进程拉 `claude --dangerously-skip-permissions` 无信任模型注释
-- 论文 `title / pdf_path` 字符串如果来源不可信，会被子 Claude 当指令读
-- 不是注入风险（args 是 list 形），但建议加注释
+### ~~P3-4~~ ✅ `paper_daemon.py` 子进程拉 `claude --dangerously-skip-permissions` 无信任模型注释
+
+**已修（2026-05-22）**：加注释说明 paper_source 字段来自本地 Zotero DB（非外部输入），args 为 list 形式（无 shell 注入）。
 
 ### P3-5：`build_manifest.py` 串行 for-loop 跑 PDF
 - 90 个 PDF I/O bound，能用 `asyncio.gather + Semaphore(10)` 提速 5-10×
