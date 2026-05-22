@@ -155,7 +155,9 @@
 - 位置：`download_note_images.py:78,122,153`、`enrich_papers.py:120`
 - 要么收窄（`OSError, SubprocessError`），要么直接 `except Exception`
 
-### P2-10：`enrich_one` 内层 except 吞所有错（含 coding bug）
+### ~~P2-10~~ ✅ `enrich_one` 内层 except 吞所有错（含 coding bug）
+
+**已修（2026-05-22）**：`enrich_one` 内层改为 `except (OSError, ValueError, UnicodeDecodeError)`；`extract_affiliations_pdf` 改为 `except (asyncio.TimeoutError, json.JSONDecodeError, OSError)`。coding bug（KeyError/TypeError/AttributeError）现在会正确冒泡。
 - `enrich_papers.py:470`
 - 外层 `gather(return_exceptions=True)` 已经兜底，内层这一层让 KeyError 等真 bug 只剩一行 warning
 - 修复方向：内层只 catch 网络 / 解析类，让 coding bug 抛出来

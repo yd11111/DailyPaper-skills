@@ -354,7 +354,7 @@ async def extract_affiliations_pdf(arxiv_id: str, sem: asyncio.Semaphore,
                         affils = data.get("affiliations", [])
                         if affils:
                             return affils
-            except (asyncio.TimeoutError, json.JSONDecodeError, Exception) as e:
+            except (asyncio.TimeoutError, json.JSONDecodeError, OSError) as e:
                 print(f"  [pdf] attempt {attempt}/{retries} failed {arxiv_id}: {e}", file=sys.stderr)
         if attempt < retries:
             await asyncio.sleep(3 * attempt)
@@ -446,7 +446,7 @@ async def enrich_one(paper: dict, sem: asyncio.Semaphore) -> dict:
         result["method_names"] = method_names
         result["method_summary"] = method_summary
 
-    except Exception as e:
+    except (OSError, ValueError, UnicodeDecodeError) as e:
         print(f"  [error] {arxiv_id}: {e}", file=sys.stderr)
 
     return result
