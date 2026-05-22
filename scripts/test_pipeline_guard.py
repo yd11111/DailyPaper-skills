@@ -45,7 +45,9 @@ def run_guard(draft_name: str, json_out: Path,
 
 
 def _tmp_json() -> Path:
-    return Path(tempfile.mktemp(suffix=".json", prefix="guard_test_"))
+    fd, path = tempfile.mkstemp(suffix=".json", prefix="guard_test_")
+    import os; os.close(fd)
+    return Path(path)
 
 
 def test_passing_draft():

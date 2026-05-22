@@ -142,9 +142,11 @@
 - 有的 print stderr 有的不，调用方区分不了"无数据" vs "binary 缺失 / crashed"
 - 修复方向：引入 logging module + 统一 level（debug/info/warning/error）
 
-### P2-9：`except (asyncio.TimeoutError, Exception)` 4 处冗余
+### ~~P2-9~~ ✅ `except (asyncio.TimeoutError, Exception)` 4 处冗余
+
+**已修（2026-05-22）**：4 处统一改为 `except Exception:`。
 - `Exception` 已经覆盖 `TimeoutError`，意图模糊
-- 位置：`download_note_images.py:82,126,157`、`enrich_papers.py:119,375`
+- 位置：`download_note_images.py:78,122,153`、`enrich_papers.py:120`
 - 要么收窄（`OSError, SubprocessError`），要么直接 `except Exception`
 
 ### P2-10：`enrich_one` 内层 except 吞所有错（含 coding bug）
@@ -152,7 +154,9 @@
 - 外层 `gather(return_exceptions=True)` 已经兜底，内层这一层让 KeyError 等真 bug 只剩一行 warning
 - 修复方向：内层只 catch 网络 / 解析类，让 coding bug 抛出来
 
-### P2-11：`daily-papers-notes/SKILL.md:164` 用 `git add -A`
+### ~~P2-11~~ ✅ `daily-papers-notes/SKILL.md:164` 用 `git add -A`
+
+**已修（2026-05-22）**：改为 `git add "DailyPapers/" "论文笔记/" "概念库/"`，只暂存本次产出目录。
 - 违反 git-safety 约定（可能暂存未跟踪敏感文件）。pin 到具体 path，跟 review skill 对齐
 
 ### P2-12：`user-config.json` 有 `max_age_days / highlights_folder / compare_folder`，`DEFAULT_CONFIG` 没有
@@ -163,7 +167,9 @@
 - `fetch_and_score.py:200`、`enrich_papers.py:39/115/368`、`download_note_images.py:27/71/120/147`、`pdf_tools.py:121`、`paper_daemon.py:578`
 - 修复方向：`user-config.json` 加 `timeouts:` 段
 
-### P2-14：`paper-reader/SKILL.md:352` 指向 `~/.claude/skills/_shared/user-config.json` 旧路径
+### ~~P2-14~~ ✅ `paper-reader/SKILL.md:352` 指向 `~/.claude/skills/_shared/user-config.json` 旧路径
+
+**已修（2026-05-22）**：改为 `~/DailyPaper/skills/_shared/user-config.json`。
 - spec #0 后真实路径是 `~/DailyPaper/skills/_shared/user-config.json`（symlink 让它仍能用）
 - 文档需更新
 
@@ -171,7 +177,9 @@
 - `python3 ../daily-papers/download_note_images.py`
 - 脆弱。要么把脚本搬到 `_shared/`，要么文档注明这个耦合
 
-### P2-16：`backfill_links.py:147-178 update_diversion_table` 有死变量
+### ~~P2-16~~ ✅ `backfill_links.py:147-178 update_diversion_table` 有死变量
+
+**已修（pipeline 自动化 PR 中已清理）**：当前代码无 `old_pattern` / `new_text`，函数已重构为直接 `re.sub` on wikilinks。
 - `old_pattern` / `new_text` 算了不用，实际 `re.sub`（line 171）用另一个 pattern
 - 看着像没做完的重构
 
@@ -180,7 +188,9 @@
 **已修（2026-05-21）**：删除 4 份已 ship spec 的源 plan 文件，只保留 `*-COMPLETION.md` 记录。
 - 已 ship 的 spec 的源 plan 文件已无价值，留一份就够。考虑收尾时归档 plan，只保留 COMPLETION
 
-### P2-18：`test_pipeline_guard.py:48` 用了已废弃的 `tempfile.mktemp()`
+### ~~P2-18~~ ✅ `test_pipeline_guard.py:48` 用了已废弃的 `tempfile.mktemp()`
+
+**已修（2026-05-22）**：改为 `tempfile.mkstemp()` + `os.close(fd)`。
 - TOCTOU 风险（测试场景影响低，但模式不该传播）
 - 换 `tempfile.NamedTemporaryFile(delete=False)` 或 `tempfile.mkstemp()[1]`
 

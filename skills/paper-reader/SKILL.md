@@ -22,7 +22,7 @@ allowed-tools: Bash, Read, Write, Edit, Glob, Grep, WebFetch, WebSearch
 
 ## Step 0: 读取共享配置
 
-先读取 `../_shared/user-config.json`，如果 `../_shared/user-config.local.json` 存在，再用它覆盖默认值。
+先读取 `~/DailyPaper/skills/_shared/user-config.json`，如果 `~/DailyPaper/skills/_shared/user-config.local.json` 存在，再用它覆盖默认值。
 
 显式生成并在后续统一使用这些变量：
 

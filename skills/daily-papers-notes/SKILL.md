@@ -134,12 +134,12 @@ python3 ../_shared/generate_paper_mocs.py
 仅当 `GIT_COMMIT_ENABLED=true` 时执行，并且必须先检查：
 
 1. `VAULT_PATH/.git` 存在
-2. `git add -A` 后确实有 staged changes
+2. `git add` 相关文件后确实有 staged changes
 
-满足条件后才 commit：
+满足条件后才 commit（只 add 本次修改的路径，不要 `git add -A`）：
 
 ```bash
-cd {VAULT_PATH} && git add -A && git commit -m "daily papers: notes YYYY-MM-DD"
+cd {VAULT_PATH} && git add "DailyPapers/" "论文笔记/" "概念库/" && git commit -m "daily papers: notes YYYY-MM-DD"
 ```
 
 只有在 `GIT_PUSH_ENABLED=true` 且仓库已配置远端时才 push。

@@ -117,7 +117,7 @@ async def curl_fetch(url: str, sem: asyncio.Semaphore, timeout: int = CURL_TIMEO
                 content = stdout.decode("utf-8", errors="replace") if stdout else ""
                 if content:
                     return content
-            except (asyncio.TimeoutError, Exception) as e:
+            except Exception as e:
                 print(f"  [curl] attempt {attempt}/{retries} failed {url}: {e}", file=sys.stderr)
         if attempt < retries:
             await asyncio.sleep(3 * attempt)  # 3s, 6s

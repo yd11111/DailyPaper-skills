@@ -75,7 +75,7 @@ async def check_url(url: str, sem: asyncio.Semaphore) -> bool:
             if content_type and "image" not in content_type.lower():
                 return False
             return True
-        except (asyncio.TimeoutError, Exception):
+        except Exception:
             return False
 
 
@@ -119,7 +119,7 @@ async def download_image(url: str, dest: Path, sem: asyncio.Semaphore) -> bool:
                 dest.unlink(missing_ok=True)
                 return False
             return True
-        except (asyncio.TimeoutError, Exception):
+        except Exception:
             dest.unlink(missing_ok=True)
             return False
 
@@ -150,7 +150,7 @@ async def try_pdf_extract(arxiv_id: str, assets_dir: Path, method_name: str,
                 )
                 if fig_num - 1 < len(large):
                     return large[fig_num - 1]
-        except (asyncio.TimeoutError, Exception):
+        except Exception:
             pass
     return None
 
