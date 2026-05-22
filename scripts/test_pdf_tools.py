@@ -5,7 +5,7 @@ Stdlib only. Tests local-path branches; URL branch validated only
 in caller migration smoke (per spec §6).
 
 Run:
-    python3 /Users/xiangshu/DailyPaper/scripts/test_pdf_tools.py
+    python3 scripts/test_pdf_tools.py
 """
 
 import importlib.util
@@ -14,7 +14,7 @@ import sys
 import tempfile
 from pathlib import Path
 
-REPO = Path("/Users/xiangshu/DailyPaper")
+REPO = Path(__file__).resolve().parents[1]
 MODULE = REPO / "skills" / "_shared" / "pdf_tools.py"
 FIXTURE = REPO / "scripts" / "fixtures" / "sample.pdf"
 

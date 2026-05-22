@@ -2,7 +2,7 @@
 """Static tests verifying HF Trending has been removed from daily pipeline.
 
 Run:
-    python3 /Users/xiangshu/DailyPaper/scripts/test_fetch_no_trending.py
+    python3 scripts/test_fetch_no_trending.py
 
 Exits 0 if all assertions pass, 1 otherwise. Each test prints PASS/FAIL.
 Tests are pure static analysis + import-time checks — no network, no
@@ -15,7 +15,8 @@ import re
 import sys
 from pathlib import Path
 
-SKILLS = Path.home() / ".claude" / "skills"
+REPO = Path(__file__).resolve().parents[1]
+SKILLS = REPO / "skills"
 FETCH_PY = SKILLS / "daily-papers" / "fetch_and_score.py"
 USER_CFG = SKILLS / "_shared" / "user-config.json"
 FETCH_SKILL = SKILLS / "daily-papers-fetch" / "SKILL.md"

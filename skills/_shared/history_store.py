@@ -6,7 +6,6 @@ Used by: fetch_and_score.py (read), update_history.py (read+write).
 
 import json
 from datetime import datetime, timedelta
-from pathlib import Path
 
 from user_config import daily_papers_dir
 

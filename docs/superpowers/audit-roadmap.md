@@ -4,8 +4,10 @@
 > 新 spec 开工前先扫一眼这里有没有更高优的事被压住。
 
 - **建立日期**：2026-05-21（spec #2 收尾时一次性整理）
+- **最后更新**：2026-05-22
 - **来源**：4 份 `*-COMPLETION.md` 的 "Pending follow-ups" + 一次完整代码审计
 - **维护方式**：完成一条就标 `[x]` 并写"由 spec #N 关闭"，不要删；累积形成历史
+- **当前进度**：P1 全部关闭（11/11）；P2 关闭 16/19（剩 P2-2、P2-3 wontfix、P2-8）；P3 关闭 1/9（P3-7）；测试 100 pass
 
 ---
 
@@ -114,9 +116,10 @@
 - `skills/daily-papers/enrich_papers.py:79-97` + `skills/daily-papers/extract_affiliations.py:16-38`
 - 加一个学校要改两处。抽 `_shared/affiliation_keywords.py`
 
-### P2-2：Zotero DB 辅助函数 3 处复制
-- `paper-reader/paper_daemon.py` + `paper-reader/assets/zotero_helper.py` + `paper-reader/assets/reorganize_notes.py`
-- 都是"开 readonly + 走 collections 树"。抽 `_shared/zotero_db.py`
+### P2-2：Zotero DB 辅助函数 2 处复制
+- `paper-reader/paper_daemon.py` + `paper-reader/assets/zotero_helper.py`（`reorganize_notes.py` 已被 P1-9 删除）
+- 两份各自实现 `copy_db` / `get_all_child_collections` / `get_pdf_path`，API 风格不同（daemon 传 db_path str，helper 传 conn）
+- 抽 `_shared/zotero_db.py` 统一接口；daemon 有 6 个 Zotero 函数，helper 有 13 个，共约 5 个重叠
 
 ### P2-3：`sys.path` bootstrap 在 10 个文件里 copy-paste — **wontfix**
 - 同样的 3 行 `_SHARED_DIR = ... / sys.path.insert(0, ...)` 出现 11 次
@@ -244,10 +247,9 @@
 ### P3-6：`update_history.py` 是 sync 但被 async review skill 通过 subprocess 调用
 - pipeline 已经付 subprocess 开销。未来重构：让它可 import，review 直接调用
 
-### P3-7：3 个 test 用 3 种不同方式找 skills 路径
-- `test_pdf_tools.py:17`、`test_pipeline_guard.py:17` → 硬编码 `/Users/xiangshu/DailyPaper`
-- `test_fetch_no_trending.py:18` → `Path.home() / ".claude" / "skills"`（靠 symlink）
-- 统一到 `Path(__file__).resolve().parents[1]`
+### ~~P3-7~~ ✅ 3 个旧 test 用硬编码路径（新 test 已统一）
+
+**已修（2026-05-22）**：3 个旧 test 统一改为 `Path(__file__).resolve().parents[1]`，docstring 中 `Run:` 路径也改为相对。全部 8 个 test 文件现在都是可移植路径。
 
 ### P3-8：`test_pipeline_guard.py` 测试 fixture 缺
 - 空 draft（0 个 `### N.` 段）
@@ -271,6 +273,12 @@
 - [x] `_check_binary` 错误信息改成跨平台（不只 `brew install poppler`）——已改为 macOS/Debian/Windows 三平台提示
 - [x] 设 `git config --global user.email/name` 消掉 auto-attribution 警告——已设 yd11111 / 1784578480@qq.com
 - [x] 确认 `skills/daily-papers/__pycache__/` 在 `.gitignore` 里（审计观察到目录存在）——已确认：根 `.gitignore` 含 `__pycache__/` 规则
+- [x] 清理重构残留的 dead imports（P1-3/P2-4/P2-5 遗留）——已清理 6 处：
+  - ~~`fetch_and_score.py` `import re` + `URLError`~~
+  - ~~`build_manifest.py` `import re`~~
+  - ~~`history_store.py` `from pathlib import Path`~~
+  - ~~`backfill_links.py` `obsidian_vault_path`~~
+  - ~~`user_config.py` `import os`~~
 
 ---
 

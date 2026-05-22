@@ -15,12 +15,10 @@ Stderr: progress logs.  Stdout: JSON array of top papers (30 * days).
 import argparse
 import json
 import os
-import re
 import sys
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta
 from pathlib import Path
-from urllib.error import URLError
 from urllib.request import Request, urlopen
 
 _SHARED_DIR = Path(__file__).resolve().parent.parent / "_shared"

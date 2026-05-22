@@ -17,7 +17,6 @@ huangkiki/dailypaper-skills 的 paper-reader 设计：让 LLM 做语义判断，
 
 import argparse
 import json
-import re
 import sys
 from collections import Counter
 from pathlib import Path

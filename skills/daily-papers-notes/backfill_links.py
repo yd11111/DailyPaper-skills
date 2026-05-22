@@ -25,7 +25,7 @@ if str(_SHARED_DIR) not in sys.path:
     sys.path.insert(0, str(_SHARED_DIR))
 
 from method_name import normalize as _normalize_name
-from user_config import obsidian_vault_path, paper_notes_dir
+from user_config import paper_notes_dir
 
 NOTES_DIR = paper_notes_dir()
 

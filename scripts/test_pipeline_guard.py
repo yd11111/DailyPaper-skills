@@ -5,7 +5,7 @@ Runs each test as a subprocess against the real CLI, exactly as
 daily-papers-review will invoke it. Stdlib only — no pytest.
 
 Run:
-    python3 /Users/xiangshu/DailyPaper/scripts/test_pipeline_guard.py
+    python3 scripts/test_pipeline_guard.py
 """
 
 import json
@@ -14,7 +14,7 @@ import sys
 import tempfile
 from pathlib import Path
 
-REPO = Path("/Users/xiangshu/DailyPaper")
+REPO = Path(__file__).resolve().parents[1]
 GUARD = REPO / "skills" / "_shared" / "pipeline_guard.py"
 FIX = REPO / "scripts" / "fixtures"
 ENRICHED = FIX / "enriched.json"
