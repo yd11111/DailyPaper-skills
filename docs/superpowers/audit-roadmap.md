@@ -138,7 +138,9 @@
 - 后果：`π0.5.md` 在 paper_daemon 能匹配，在 backfill 永远匹配不上
 - 抽 `_shared/method_name.py`
 
-### P2-6：`paper-reader/paper_daemon.py` 无测试（788 行，最大文件）
+### ~~P2-6~~ ✅ `paper-reader/paper_daemon.py` 无测试（788 行，最大文件）
+
+**已修（2026-05-22）**：新建 `scripts/test_paper_daemon.py`，20 个测试覆盖 detect_limit_error / parse_reset_wait_seconds / _normalize_method_name / _extract_note_method_names / title_matches_note（精确匹配/子串/短子串防误匹配/空输入）。
 - 至少这些纯函数该测：`title_matches_note / _normalize_method_name / _extract_note_method_names / parse_reset_wait_seconds / detect_limit_error`
 
 ### ~~P2-7~~ ✅ `daily-papers-notes/backfill_links.py` 无测试
