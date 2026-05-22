@@ -163,11 +163,20 @@ created: <YYYY-MM-DD>
 
 ## 📊 关键结果 / 评测
 
-<2-3 句话：核心 benchmark + SOTA 数字。例如：
+<2-4 行，每行 benchmark 名 + 具体数字。**硬要求**：必须有至少 1 个具体指标。
+
+获取方式（按优先级）：
+1. first_page_text 里的数字 → 直接用
+2. WebFetch arxiv HTML → 找 Results / Experiments section 的核心 table
+3. 都没有（anonymous submission 等）→ 写「匿名投稿，具体数字见论文 Table N」
+
+❌ 禁止：「显著优于」「接近人类水平」等无数字的定性描述
+✅ 必须：「LibriSpeech WER 2.1%」「MUSHRA 82.3」「SIM-O 0.796」
+
+例如：
 - LibriTTS WER 2.1%, SIM-O 0.68
 - Seed-TTS-eval zh: CER 0.95%
-
-如首页无具体数字，写「首页未给出，待全文确认」>
+- MUSHRA: speech 82.3, music 79.1>
 
 ## 💡 借鉴意义（一句话）
 
