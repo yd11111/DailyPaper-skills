@@ -122,7 +122,7 @@ allowed-tools: Bash, Read, Write, Edit, Glob, Grep, WebFetch, WebSearch
 
 笔记保存后，运行图片可达性检查脚本，自动将不可访问的外链图片下载到本地：
 ```bash
-python3 ../daily-papers/download_note_images.py "{笔记完整路径}"
+python3 ~/DailyPaper/skills/daily-papers/download_note_images.py "{笔记完整路径}"
 ```
 - 可达的外链保持不动，不可达的自动下载到 `assets/` 并替换为 Obsidian wikilink
 - 如有本地化操作，frontmatter `image_source` 自动更新为 `mixed`

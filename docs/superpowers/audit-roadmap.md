@@ -181,7 +181,9 @@
 - spec #0 后真实路径是 `~/DailyPaper/skills/_shared/user-config.json`（symlink 让它仍能用）
 - 文档需更新
 
-### P2-15：`paper-reader/SKILL.md:125` 跨 skill 用相对路径调子进程
+### ~~P2-15~~ ✅ `paper-reader/SKILL.md:125` 跨 skill 用相对路径调子进程
+
+**已修（2026-05-22）**：改为绝对路径 `~/DailyPaper/skills/daily-papers/download_note_images.py`。
 - `python3 ../daily-papers/download_note_images.py`
 - 脆弱。要么把脚本搬到 `_shared/`，要么文档注明这个耦合
 
