@@ -28,7 +28,7 @@ if str(_SHARED_DIR) not in sys.path:
     sys.path.insert(0, str(_SHARED_DIR))
 
 from arxiv_id import extract_id as extract_arxiv_id, extract_all_ids
-from user_config import daily_papers_config, daily_papers_dir
+from user_config import daily_papers_config, daily_papers_dir, timeouts_config
 
 # ── Configuration ──────────────────────────────────────────────────────────
 
@@ -86,7 +86,10 @@ def score_paper(paper: dict) -> int:
 # ── Fetchers ───────────────────────────────────────────────────────────────
 
 
-def fetch_url(url: str, timeout: int = 30) -> str:
+_ARXIV_TIMEOUT = timeouts_config().get("arxiv_fetch", 30)
+
+
+def fetch_url(url: str, timeout: int = _ARXIV_TIMEOUT) -> str:
     try:
         req = Request(url, headers={"User-Agent": "daily-papers-bot/1.0"})
         with urlopen(req, timeout=timeout) as resp:

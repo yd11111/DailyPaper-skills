@@ -17,6 +17,10 @@ import shutil
 import subprocess
 from pathlib import Path
 
+from user_config import timeouts_config as _timeouts_config
+
+_PDF_TIMEOUT = _timeouts_config().get("pdf_extract", 30)
+
 
 def _check_binary(name: str) -> None:
     if shutil.which(name) is None:
@@ -120,7 +124,7 @@ def extract_images(
     try:
         subprocess.run(
             ["pdfimages", "-png", str(pdf), str(out / prefix)],
-            check=True, capture_output=True, timeout=30,
+            check=True, capture_output=True, timeout=_PDF_TIMEOUT,
         )
     except (subprocess.CalledProcessError, subprocess.TimeoutExpired, OSError):
         return []

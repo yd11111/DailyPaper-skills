@@ -176,7 +176,9 @@
 - 各文件用 `.get(..., default)` 散落 fallback，schema 实际住两处
 - 在 `user_config.py` 补 `highlights_dir() / compare_dir() / max_age_days()` 便捷函数
 
-### P2-13：硬编码超时散落 6 个文件
+### ~~P2-13~~ ✅ 硬编码超时散落 6 个文件
+
+**已修（2026-05-22）**：`DEFAULT_CONFIG` 加 `timeouts: {curl_html, curl_image, pdf_extract, arxiv_fetch}`。4 个脚本改为从 `timeouts_config()` 读取。`paper_daemon.py` 的 rate-limit wait 保持硬编码（语义不同，不是网络超时）。
 - `fetch_and_score.py:200`、`enrich_papers.py:39/115/368`、`download_note_images.py:27/71/120/147`、`pdf_tools.py:121`、`paper_daemon.py:578`
 - 修复方向：`user-config.json` 加 `timeouts:` 段
 

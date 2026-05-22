@@ -53,6 +53,12 @@ DEFAULT_CONFIG = {
         "top_n": 30,
         "max_age_days": 7,
     },
+    "timeouts": {
+        "curl_html": 30,
+        "curl_image": 10,
+        "pdf_extract": 30,
+        "arxiv_fetch": 30,
+    },
     "automation": {
         "auto_refresh_indexes": True,
         "git_commit": False,
@@ -133,6 +139,10 @@ def compare_dir() -> Path:
 
 def max_age_days() -> int:
     return int(daily_papers_config().get("max_age_days", 7))
+
+
+def timeouts_config() -> dict:
+    return load_user_config().get("timeouts", {})
 
 
 def zotero_db_path() -> Path:

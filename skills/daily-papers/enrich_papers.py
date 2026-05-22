@@ -34,11 +34,11 @@ if str(_SHARED_DIR) not in sys.path:
 
 from affiliation_keywords import INST_KEYWORDS
 from arxiv_id import extract_id as _extract_arxiv_id
-from user_config import temp_file_path
+from user_config import temp_file_path, timeouts_config
 import pdf_tools as _pdf_tools
 
 SEMAPHORE_LIMIT = 10
-CURL_TIMEOUT = 30
+CURL_TIMEOUT = timeouts_config().get("curl_html", 30)
 
 # ── Stop words for method_names extraction ──────────────────────────────────
 METHOD_STOP = {

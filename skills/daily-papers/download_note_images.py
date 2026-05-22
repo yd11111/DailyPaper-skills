@@ -21,10 +21,10 @@ if str(_SHARED_DIR) not in sys.path:
     sys.path.insert(0, str(_SHARED_DIR))
 
 from arxiv_id import extract_id as extract_arxiv_id
-from user_config import temp_file_path
+from user_config import temp_file_path, timeouts_config
 import pdf_tools as _pdf_tools
 
-CURL_TIMEOUT = 10
+CURL_TIMEOUT = timeouts_config().get("curl_image", 10)
 CONCURRENCY = 5
 
 
