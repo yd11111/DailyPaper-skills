@@ -7,7 +7,7 @@
 - **最后更新**：2026-05-22
 - **来源**：4 份 `*-COMPLETION.md` 的 "Pending follow-ups" + 一次完整代码审计
 - **维护方式**：完成一条就标 `[x]` 并写"由 spec #N 关闭"，不要删；累积形成历史
-- **当前进度**：P1 全部关闭（11/11）；P2 关闭 17/19（剩 P2-3 wontfix、P2-8）；P3 关闭 6/9（P3-2/3/4/7/8/9）；测试 136 pass
+- **当前进度**：P1 全部关闭（11/11）；P2 关闭 17/19（P2-3 wontfix、P2-8 降级 nice-to-have）；P3 关闭 6/9（P3-2/3/4/7/8/9）；测试 136 pass
 
 ---
 
@@ -153,10 +153,12 @@
 **已修（2026-05-22）**：新建 `scripts/test_backfill_links.py`，11 个测试覆盖 extract_method_name_from_title / match_papers_with_notes（find/skip/already-linked/normalized）/ backfill_links（insert/no-match）/ update_diversion_table。
 - `match_papers_with_notes`（line 80）regex 脆弱；`update_diversion_table` 不 match 时静默部分更新
 
-### P2-8：错误处理无统一策略，9 处 silent return
+### P2-8：错误处理无统一策略，9 处 silent return — **降级为 P3**
 - `enrich_papers.py:123,152,296`、`fetch_and_score.py:94`、`download_note_images.py:82,106,126,157`、`pdf_tools.py:43,45,60,66,69` 等
 - 有的 print stderr 有的不，调用方区分不了"无数据" vs "binary 缺失 / crashed"
-- 修复方向：引入 logging module + 统一 level（debug/info/warning/error）
+- **缓解措施（已完成）**：P2-10 收窄了 enrich_one 的 except（coding bug 不再被吞）；pdf_tools 的空返回是 by-design（caller 用空串判断"PDF 不可用"）
+- 剩余价值：引入 logging module 可统一 level（但这些是 one-shot CLI，非长跑服务，`print(stderr)` 模式可接受）
+- **状态**：降为 nice-to-have，不紧急
 
 ### ~~P2-9~~ ✅ `except (asyncio.TimeoutError, Exception)` 4 处冗余
 
