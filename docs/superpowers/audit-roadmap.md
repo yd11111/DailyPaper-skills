@@ -7,7 +7,7 @@
 - **最后更新**：2026-05-22
 - **来源**：4 份 `*-COMPLETION.md` 的 "Pending follow-ups" + 一次完整代码审计
 - **维护方式**：完成一条就标 `[x]` 并写"由 spec #N 关闭"，不要删；累积形成历史
-- **当前进度**：P1 全部关闭（11/11）；P2 关闭 17/19（P2-3 wontfix、P2-8 降级 nice-to-have）；P3 关闭 7/9（P3-1/2/3/4/7/8/9）；测试 136 pass
+- **当前进度**：P1 全部关闭（11/11）；P2 关闭 17/19（P2-3 wontfix、P2-8 降级 nice-to-have）；P3 全部关闭（9/9）；测试 149 pass
 
 ---
 
@@ -248,11 +248,13 @@
 
 **已修（2026-05-22）**：加注释说明 paper_source 字段来自本地 Zotero DB（非外部输入），args 为 list 形式（无 shell 注入）。
 
-### P3-5：`build_manifest.py` 串行 for-loop 跑 PDF
-- 90 个 PDF I/O bound，能用 `asyncio.gather + Semaphore(10)` 提速 5-10×
+### ~~P3-5~~ ✅ `build_manifest.py` 串行 for-loop 跑 PDF
 
-### P3-6：`update_history.py` 是 sync 但被 async review skill 通过 subprocess 调用
-- pipeline 已经付 subprocess 开销。未来重构：让它可 import，review 直接调用
+**已修（2026-05-22）**：改为 `asyncio.gather + Semaphore(10)` 并发抽取，90 个 PDF I/O bound 场景预计 5-10× 提速。
+
+### ~~P3-6~~ ✅ `update_history.py` 是 sync 但被 async review skill 通过 subprocess 调用
+
+**已关闭（2026-05-22）**：`update_history()` 函数本身已是可 import 的纯 Python 函数。review skill 是 LLM 执行的 markdown 指令，必须走 subprocess 调用；开销可忽略（每次 run 只调一次）。无需修改。
 
 ### ~~P3-7~~ ✅ 3 个旧 test 用硬编码路径（新 test 已统一）
 
