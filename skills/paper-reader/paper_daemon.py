@@ -36,7 +36,7 @@ if str(_SHARED_DIR) not in sys.path:
 
 from arxiv_id import extract_id as _extract_arxiv_id
 from method_name import normalize as _normalize_method_name_shared
-from user_config import concepts_dir, obsidian_vault_path, paper_notes_dir, temp_file_path
+from user_config import concepts_dir, obsidian_vault_path, paper_notes_dir, rate_limits_config, temp_file_path
 import zotero_db as _zotero
 
 # 配置
@@ -49,12 +49,13 @@ PROGRESS_FILE = os.path.join(_DAEMON_STATE_DIR, "paper_daemon_progress.json")
 LOG_FILE = os.path.join(_DAEMON_STATE_DIR, "paper_daemon.log")
 PID_FILE = os.path.join(_DAEMON_STATE_DIR, "paper_daemon.pid")
 
-# Rate limit 配置
-INITIAL_WAIT = 60          # 初始等待时间（秒）
-MAX_WAIT = 21600           # 最大等待时间（6小时）
-WAIT_MULTIPLIER = 2        # 等待时间倍数
-BETWEEN_PAPERS_WAIT = 5    # 论文之间的等待时间（秒）
-QUOTA_WAIT_TIME = 1800     # 命中配额上限时的默认等待时间（30分钟）
+# Rate limit 配置（从 user-config.json 读取，支持用户覆盖）
+_rl = rate_limits_config()
+INITIAL_WAIT = _rl["initial_wait"]
+MAX_WAIT = _rl["max_wait"]
+WAIT_MULTIPLIER = _rl["wait_multiplier"]
+BETWEEN_PAPERS_WAIT = _rl["between_papers_wait"]
+QUOTA_WAIT_TIME = _rl["quota_wait_time"]
 
 # 设置日志
 os.makedirs(os.path.dirname(LOG_FILE), exist_ok=True)

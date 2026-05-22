@@ -7,7 +7,7 @@
 - **最后更新**：2026-05-22
 - **来源**：4 份 `*-COMPLETION.md` 的 "Pending follow-ups" + 一次完整代码审计
 - **维护方式**：完成一条就标 `[x]` 并写"由 spec #N 关闭"，不要删；累积形成历史
-- **当前进度**：P1 全部关闭（11/11）；P2 关闭 17/19（P2-3 wontfix、P2-8 降级 nice-to-have）；P3 关闭 6/9（P3-2/3/4/7/8/9）；测试 136 pass
+- **当前进度**：P1 全部关闭（11/11）；P2 关闭 17/19（P2-3 wontfix、P2-8 降级 nice-to-have）；P3 关闭 7/9（P3-1/2/3/4/7/8/9）；测试 136 pass
 
 ---
 
@@ -231,9 +231,9 @@
 
 ## P3 审计发现（polish / nice-to-have）
 
-### P3-1：`paper_daemon.py:53-57` 速率限制常量硬编码
-- `INITIAL_WAIT=60 / MAX_WAIT=21600 / QUOTA_WAIT_TIME=1800`
-- 不同 Anthropic plan 用户可能想调
+### ~~P3-1~~ ✅ `paper_daemon.py:53-57` 速率限制常量硬编码
+
+**已修（2026-05-22）**：`DEFAULT_CONFIG` 新增 `rate_limits` 段（initial_wait / max_wait / wait_multiplier / between_papers_wait / quota_wait_time）；新增 `rate_limits_config()` 便捷函数；`paper_daemon.py` 改为从 config 读取。用户可通过 `user-config.json` 覆盖。
 
 ### ~~P3-2~~ ✅ `build_manifest.py` 硬编码 `/tmp/...`
 

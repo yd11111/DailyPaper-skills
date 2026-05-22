@@ -52,6 +52,13 @@ DEFAULT_CONFIG = {
         "top_n": 30,
         "max_age_days": 7,
     },
+    "rate_limits": {
+        "initial_wait": 60,
+        "max_wait": 21600,
+        "wait_multiplier": 2,
+        "between_papers_wait": 5,
+        "quota_wait_time": 1800,
+    },
     "timeouts": {
         "curl_html": 30,
         "curl_image": 10,
@@ -138,6 +145,10 @@ def compare_dir() -> Path:
 
 def max_age_days() -> int:
     return int(daily_papers_config().get("max_age_days", 7))
+
+
+def rate_limits_config() -> dict:
+    return load_user_config()["rate_limits"]
 
 
 def timeouts_config() -> dict:
