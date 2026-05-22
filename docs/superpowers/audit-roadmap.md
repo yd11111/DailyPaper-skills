@@ -7,7 +7,7 @@
 - **最后更新**：2026-05-22
 - **来源**：4 份 `*-COMPLETION.md` 的 "Pending follow-ups" + 一次完整代码审计
 - **维护方式**：完成一条就标 `[x]` 并写"由 spec #N 关闭"，不要删；累积形成历史
-- **当前进度**：P1 全部关闭（11/11）；P2 关闭 17/19（P2-3 wontfix、P2-8 降级 nice-to-have）；P3 全部关闭（9/9）；测试 149 pass
+- **当前进度**：P1 全部关闭（11/11）；P2 关闭 17/19（P2-3 wontfix、P2-8 降级 nice-to-have）；P3 全部关闭（9/9）；spec #5 已完成；测试 149 pass
 
 ---
 
@@ -28,11 +28,14 @@
   - `enrich_papers.py` 新增字段：doi / citation_count / influential_citation_count / venue / tldr
   - **状态**：已完成（2026-05-22）
 
-- [ ] **spec #5（暂定）— library-import 重构**
-  - 修 `.pdf.md` 空文件 bug
-  - 修 SKILL.md Step 3.3 自相矛盾的 figure 处理流程（写了 `/tmp/library_figs` 但没脚本生成）
-  - 顺便用 `pdf_tools.extract_images` 做 figure fallback
-  - **状态**：未开始；优先级中
+- [x] **spec #5 — library-import 重构**
+  - 修 `.pdf.md` 空文件 bug：Step 4 加明确 ⚠️ 提示目标是 .pdf 二进制文件
+  - 修 SKILL.md Step 3.3 自相矛盾的 figure 处理流程：删除假的 `/tmp/library_figs` 引用
+  - 新 Step 3.3：`pdf_tools.extract_images` fallback（WebFetch 失败时按文件大小取 top 3 图）
+  - 消除"不抽图"与 Step 3.0 WebFetch 选图流程的矛盾
+  - 修 Step 1 脚本路径（`~/.claude/skills/` → `~/DailyPaper/skills/`）
+  - 清理 vault 中 2 个 0 字节 `.pdf.md` 遗留文件
+  - **状态**：已完成（2026-05-22）
 
 - [ ] **future「domain research」skill**
   - 把 spec #1 删掉的 HF Trending 抓取从 `_backup/` 复活，做"领域定向调研"

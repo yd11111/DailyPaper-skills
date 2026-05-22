@@ -20,7 +20,7 @@ allowed-tools: Bash, Read, Write, Edit, Glob, Grep
 
 ## 设计原则（不要破坏）
 
-1. **Lite ≠ Full**：本 skill 不调用 paper-reader，不抽图、不补概念库、不刷 MOC、不爬 arXiv HTML。**只用 manifest 里的 metadata + first_page_text**
+1. **Lite ≠ Full**：本 skill 不调用 paper-reader，不补概念库，不刷 MOC。**Python 层只做 metadata**，图的语义选择交给 Claude WebFetch（见 Step 3.0）
 2. **复用现有 vault 结构**：所有笔记进 `论文笔记/{15 个预设分类}/{MethodName}.md`，frontmatter 加 `tags: [classic]` + `library_source` 标记
 3. **PDF 一并归档**：原 PDF 复制到 `{VAULT_PATH}/assets/papers/{MethodName}.pdf`；笔记 frontmatter `pdf_path` 指向**它**（不是源路径），方便 vault 自洽
 4. **批处理**：10 篇一批，避免单次上下文爆炸；每 30 篇做一次 git commit 阶段性保存
@@ -40,7 +40,7 @@ allowed-tools: Bash, Read, Write, Edit, Glob, Grep
 如果用户给了路径（默认就是 `/Users/xiangshu/高德工作/文献`），先跑：
 
 ```bash
-python3 ~/.claude/skills/library-import/build_manifest.py "<library_root>"
+python3 ~/DailyPaper/skills/library-import/build_manifest.py "<library_root>"
 ```
 
 manifest 落在 `/tmp/library_import_manifest.json`，含每篇 PDF 的：
@@ -182,19 +182,26 @@ created: <YYYY-MM-DD>
 
 **字数硬约束**：整篇笔记 **1200-3500 字符**之间（嵌图后体积变大，硬约束相应放宽）。低于 800 字符说明信息不足（mark 为 `_待整理/`），超过 3500 字符说明写多了（精简）。
 
-### 3.3 图文件归位（**重要**）
+### 3.3 pdf_tools fallback（无 arxiv_id 或 HTML 404 时）
 
-manifest 给的图在 `/tmp/library_figs/{pdf_stem}/arch_N_pK.png`。生成笔记时**必须**把这些图复制到 vault：
+当 Step 3.0 无法获得外链架构图时（无 arxiv_id / 两个 URL 都 404）：
 
-```bash
-mkdir -p {VAULT_PATH}/assets/papers/figs
-cp /tmp/library_figs/{pdf_stem}/arch_1_p2.png {VAULT_PATH}/assets/papers/figs/{MethodName}_fig1.png
-cp /tmp/library_figs/{pdf_stem}/arch_2_p5.png {VAULT_PATH}/assets/papers/figs/{MethodName}_fig2.png
-```
+1. 跑 python3 片段调 `_shared/pdf_tools.extract_images`：
+   ```bash
+   python3 -c "
+   import sys; sys.path.insert(0, '$HOME/DailyPaper/skills/_shared')
+   import pdf_tools
+   imgs = pdf_tools.extract_images('{absolute_path}', '/tmp/library_figs/{MethodName}', 'fig', min_size_bytes=30720)
+   for p in sorted(imgs, key=lambda x: x.stat().st_size, reverse=True)[:3]:
+       print(p)
+   "
+   ```
+2. 取输出的前 1-3 张（按大小降序，大图更可能是架构图）
+3. 复制到 vault：`cp <img> {VAULT_PATH}/assets/papers/figs/{MethodName}_fig{N}.png`
+4. 笔记里用相对路径嵌入：`![](assets/papers/figs/{MethodName}_fig1.png)`
+5. 如果返回空（PDF 无可用图）→ 省略整个 `## 🖼 架构图` section
 
-笔记里用 markdown 图片语法 `![](assets/papers/figs/{MethodName}_fig1.png)` 引用。**不要**留 `/tmp/` 路径（重启即丢）。
-
-注：架构图 PNG（一般 100-400KB）**应该**走 git（不像 PDF 那么大），所以**不要**加进 .gitignore。一个论文的图 1-3 张 × 90 篇 ≈ 30 MB，可控。
+**注意**：此 fallback 是**无语义选择**的（无法判断哪张是架构图），仅在 WebFetch 路径失败时才用。架构图 PNG（一般 100-400 KB）走 git，不加 .gitignore。
 
 ## Step 4: 批量执行循环
 
@@ -207,7 +214,9 @@ for batch in chunks(entries, 10):
     3. 写入 {NOTES_PATH}/{category}/{MethodName}.md
        - 文件已存在 → 重命名为 {MethodName}-classic.md（与今日报已有笔记区分）
        - 例外：如果已有同名笔记是更深度的版本（>3 KB），跳过这篇，记到「跳过：已存在更深版本」
-    4. Bash: cp {absolute_path} {ASSETS_PATH}/{MethodName}.pdf
+    4. Bash: cp "{absolute_path}" "{ASSETS_PATH}/{MethodName}.pdf"
+       ⚠️ 目标是 .pdf 文件（二进制复制），**不是** .pdf.md。
+       如果 PDF >50 MB 或源文件不存在，跳过并记录到失败列表。
   打印批次进度: "Batch X/9 done (N/90)"
 
 每 3 批做一次 git commit（每 30 篇）：
@@ -254,7 +263,7 @@ Git commit: 3 次（main 分支已推送）
 ## 注意事项
 
 - **不刷 MOC**：导入完不主动跑 `generate_paper_mocs.py`。让用户决定要不要更新索引页（90 篇一进 MOC 会膨胀很大）
-- **不抽图**：Lite 笔记不该带 `![]()` 图片
+- **图按需加**：优先 WebFetch 外链（Step 3.0），其次 pdf_tools fallback（Step 3.3），都不行就省略图段
 - **不建概念**：不创建 `_概念/` 下任何文件
 - **失败不重试**：单篇失败直接放 `_待整理/{filename}.md` 写错误日志，不阻塞
 - **历史 manifest 保留**：跑完后 `/tmp/library_import_manifest.json` 不要删，方便 debug
