@@ -34,6 +34,7 @@ if str(_SHARED_DIR) not in sys.path:
 
 from affiliation_keywords import INST_KEYWORDS
 from arxiv_id import extract_id as _extract_arxiv_id
+from scholarly_api import fetch_scholarly
 from user_config import temp_file_path, timeouts_config
 import pdf_tools as _pdf_tools
 
@@ -417,19 +418,24 @@ async def enrich_one(paper: dict, sem: asyncio.Semaphore) -> dict:
         if not html_affiliations and not abs_affiliations:
             pdf_affiliations = await extract_affiliations_pdf(arxiv_id, sem)
 
+        # Scholarly DB enrichment (Semantic Scholar + OpenAlex fallback)
+        scholarly = await fetch_scholarly(arxiv_id)
+
         # ── Merge with priority rules ──
         # Principle: new extraction > existing input, but never overwrite non-empty with empty
 
         # figure_url: HTML curl > keep existing
         result["figure_url"] = figure_url or paper.get("figure_url", "")
 
-        # affiliations: HTML > abs fallback > PDF fallback > keep existing input
+        # affiliations: HTML > abs > PDF > scholarly DB > keep existing
         if html_affiliations:
             result["affiliations"] = ", ".join(html_affiliations)
         elif abs_affiliations:
             result["affiliations"] = ", ".join(abs_affiliations)
         elif pdf_affiliations:
             result["affiliations"] = ", ".join(pdf_affiliations)
+        elif scholarly.get("s2_affiliations"):
+            result["affiliations"] = ", ".join(scholarly["s2_affiliations"])
         # else: keep whatever was in the input (supports re-enriching enriched data)
 
         # authors: HTML > abs fallback > keep existing input
@@ -438,6 +444,13 @@ async def enrich_one(paper: dict, sem: asyncio.Semaphore) -> dict:
         elif abs_authors:
             result["authors"] = ", ".join(abs_authors)
         # else: keep original
+
+        # Scholarly metadata (new fields)
+        result["doi"] = scholarly.get("doi", "")
+        result["citation_count"] = scholarly.get("citation_count", 0)
+        result["influential_citation_count"] = scholarly.get("influential_citation_count", 0)
+        result["venue"] = scholarly.get("venue", "")
+        result["tldr"] = scholarly.get("tldr", "")
 
         # Other enriched fields
         result["section_headers"] = section_headers

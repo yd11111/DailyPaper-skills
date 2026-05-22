@@ -59,6 +59,11 @@ DEFAULT_CONFIG = {
         "between_papers_wait": 5,
         "quota_wait_time": 1800,
     },
+    "scholarly_api": {
+        "enabled": True,
+        "semantic_scholar_key": "",
+        "openalex_email": "",
+    },
     "timeouts": {
         "curl_html": 30,
         "curl_image": 10,
@@ -149,6 +154,10 @@ def max_age_days() -> int:
 
 def rate_limits_config() -> dict:
     return load_user_config()["rate_limits"]
+
+
+def scholarly_api_config() -> dict:
+    return load_user_config()["scholarly_api"]
 
 
 def timeouts_config() -> dict:

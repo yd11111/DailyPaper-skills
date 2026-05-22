@@ -22,10 +22,11 @@
 
 ## 进行中 / 已规划的 spec
 
-- [ ] **spec #4 — Semantic Scholar / OpenAlex DOI 富化**
+- [x] **spec #4 — Semantic Scholar / OpenAlex DOI 富化**
   - 跨源主键（arxiv id 之外用 DOI 拉 affiliations / citations）
-  - 多个 COMPLETION 都点名了；spec #2 的 `pdf_tools.extract_text(doi_url, first_n_pages=2)` 为它预留好了
-  - **状态**：未开始；下个开工的 spec 候选
+  - 新增 `_shared/scholarly_api.py`：S2 主 + OpenAlex 备，subprocess curl，Semaphore(1) 限速
+  - `enrich_papers.py` 新增字段：doi / citation_count / influential_citation_count / venue / tldr
+  - **状态**：已完成（2026-05-22）
 
 - [ ] **spec #5（暂定）— library-import 重构**
   - 修 `.pdf.md` 空文件 bug
