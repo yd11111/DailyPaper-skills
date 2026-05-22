@@ -7,7 +7,7 @@
 - **最后更新**：2026-05-22
 - **来源**：4 份 `*-COMPLETION.md` 的 "Pending follow-ups" + 一次完整代码审计
 - **维护方式**：完成一条就标 `[x]` 并写"由 spec #N 关闭"，不要删；累积形成历史
-- **当前进度**：P1 全部关闭（11/11）；P2 关闭 16/19（剩 P2-2、P2-3 wontfix、P2-8）；P3 关闭 1/9（P3-7）；测试 100 pass
+- **当前进度**：P1 全部关闭（11/11）；P2 关闭 16/19（剩 P2-2、P2-3 wontfix、P2-8）；P3 关闭 4/9（P3-2/3/7/9）；测试 133 pass
 
 ---
 
@@ -231,11 +231,13 @@
 - `INITIAL_WAIT=60 / MAX_WAIT=21600 / QUOTA_WAIT_TIME=1800`
 - 不同 Anthropic plan 用户可能想调
 
-### P3-2：`build_manifest.py:48` 硬编码 `/tmp/...`
-- 有 `_shared/user_config.py.temp_file_path()` 抽象但没用；Windows 下会挂
+### ~~P3-2~~ ✅ `build_manifest.py` 硬编码 `/tmp/...`
 
-### P3-3：`extract_affiliations.py` 无测试
-- 纯 regex pipeline，最适合 PDF-text fixture 单测
+**已修（2026-05-22）**：`--out` 默认值改为 `temp_file_path("library_import_manifest.json")`，走 `user_config` 的跨平台抽象。
+
+### ~~P3-3~~ ✅ `extract_affiliations.py` 无测试
+
+**已修（2026-05-22）**：新建 `scripts/test_extract_affiliations.py`，33 个测试覆盖 extract_header（3 场景）/ is_noise（7 场景）/ looks_like_sentence（4 场景）/ has_inst_keyword（4 场景含 word-boundary）/ clean_affiliation（4 场景）/ split_numbered_affiliations（3 场景）/ _is_author_line（4 场景）/ extract_affiliations integration（4 场景含 dedup/empty）。
 
 ### P3-4：`paper_daemon.py:574` 子进程拉 `claude --dangerously-skip-permissions` 无信任模型注释
 - 论文 `title / pdf_path` 字符串如果来源不可信，会被子 Claude 当指令读
@@ -257,9 +259,9 @@
 - enriched.json 无 `url` 字段（应该 safe 但没 fixture）
 - `--json-out` 失败时是否被新数据覆盖
 
-### P3-9：`test_pdf_tools.py:85-107 test_binary_missing_raises` 用了 cargo-cult `importlib.reload`
-- 简化：直接 monkey-patch `pdf_tools._check_binary` 或用 `unittest.mock.patch("pdf_tools.shutil.which")`
-- （已记录在 spec #2 minor items，此处只是 cross-reference）
+### ~~P3-9~~ ✅ `test_pdf_tools.py` cargo-cult `importlib.reload`
+
+**已修（2026-05-22）**：移除 `importlib.reload` 调用和 `importlib.util` 未用导入。`pdf_tools` 通过 `import shutil` 引用 `shutil.which`，直接 patch `shutil.which` 即可生效无需 reload。
 
 ---
 

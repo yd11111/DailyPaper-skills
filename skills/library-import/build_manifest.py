@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""扫一个本地 PDF 文献库，输出 /tmp/library_import_manifest.json。
+"""扫一个本地 PDF 文献库，输出 manifest JSON（默认 temp_file_path）。
 
 **只做基础 metadata**——图选择由 SKILL.md 里 Claude 用 WebFetch 处理（参考
 huangkiki/dailypaper-skills 的 paper-reader 设计：让 LLM 做语义判断，Python
 只处理机械事）。
 
 用法:
-    python3 build_manifest.py <library_root> [--out /tmp/manifest.json]
+    python3 build_manifest.py <library_root> [--out manifest.json]
 
 每篇 PDF 抽取：
   - filename, absolute_path, relative_path, source_topic (用户已分类目录)
@@ -26,6 +26,7 @@ if str(_SHARED_DIR) not in sys.path:
     sys.path.insert(0, str(_SHARED_DIR))
 from arxiv_id import extract_id as _extract_arxiv_id  # noqa: E402
 import pdf_tools as _pdf_tools  # noqa: E402
+from user_config import temp_file_path as _temp_file_path  # noqa: E402
 
 
 def extract_first_page(pdf_path: Path) -> str:
@@ -41,7 +42,7 @@ def find_arxiv_id(text: str) -> str | None:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("library_root", help="文献库根目录")
-    parser.add_argument("--out", default="/tmp/library_import_manifest.json")
+    parser.add_argument("--out", default=str(_temp_file_path("library_import_manifest.json")))
     args = parser.parse_args()
 
     root = Path(args.library_root).expanduser().resolve()

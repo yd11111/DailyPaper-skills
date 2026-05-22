@@ -8,7 +8,6 @@ Run:
     python3 scripts/test_pdf_tools.py
 """
 
-import importlib.util
 import shutil
 import sys
 import tempfile
@@ -18,16 +17,12 @@ REPO = Path(__file__).resolve().parents[1]
 MODULE = REPO / "skills" / "_shared" / "pdf_tools.py"
 FIXTURE = REPO / "scripts" / "fixtures" / "sample.pdf"
 
-# Put skills/_shared on sys.path so `import pdf_tools` and
-# `importlib.reload(pdf_tools)` both work via the standard PathFinder.
 _SHARED_DIR = str(MODULE.parent)
 if _SHARED_DIR not in sys.path:
     sys.path.insert(0, _SHARED_DIR)
 
 
 def _import_module():
-    # Use the standard import machinery (PathFinder) so importlib.reload
-    # in test_binary_missing_raises can find the spec.
     if "pdf_tools" in sys.modules:
         del sys.modules["pdf_tools"]
     import importlib
@@ -83,19 +78,11 @@ def test_extract_images_pdf_missing():
 
 
 def test_binary_missing_raises():
-    """Monkey-patch shutil.which to simulate pdftotext missing → RuntimeError."""
+    """Patch shutil.which to simulate pdftotext missing → RuntimeError."""
     mod = _import_module()
     orig_which = shutil.which
     try:
-        # Patch the which used inside pdf_tools (it imports shutil and calls
-        # shutil.which inside _check_binary).
         shutil.which = lambda name: None
-        # Re-import the module so _check_binary picks up the patched which.
-        # Easier: monkey-patch the module's own attribute if it does
-        # `from shutil import which` — but the spec uses `shutil.which()`.
-        # Force a reload to be safe:
-        import importlib
-        importlib.reload(mod)
         raised = False
         try:
             mod.extract_text(FIXTURE)
@@ -104,7 +91,6 @@ def test_binary_missing_raises():
         assert raised, "expected RuntimeError mentioning pdftotext"
     finally:
         shutil.which = orig_which
-        importlib.reload(mod)
 
 
 TESTS = [
