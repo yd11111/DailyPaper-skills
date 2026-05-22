@@ -122,7 +122,9 @@
 - 同样的 3 行 `_SHARED_DIR = ... / sys.path.insert(0, ...)` 出现 10 次
 - 修复方向：(a) `_shared/` 加 `__init__.py` + `pyproject.toml` 当成包，或 (b) 一个 `_shared/bootstrap.py` 大家 import
 
-### P2-4：`load_history` 实现 2 次，两个 schema owner
+### ~~P2-4~~ ✅ `load_history` 实现 2 次，两个 schema owner
+
+**已修（2026-05-22）**：新建 `_shared/history_store.py`（`load / save / append / prune`）。`fetch_and_score.py` 和 `update_history.py` 均改为 import，不再各自维护路径/读写逻辑。
 - `fetch_and_score.py:288-294` + `update_history.py:40-48,51-55`
 - 一个常量叫 `HISTORY_PATH`、一个叫 `HISTORY_FILE`，指同一文件
 - 抽 `_shared/history_store.py`：`load() / append(entries, date) / prune(days)`

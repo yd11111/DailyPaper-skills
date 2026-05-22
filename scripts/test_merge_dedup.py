@@ -57,7 +57,10 @@ def _call_merge(mod, hf=None, arxiv=None, target=TODAY, days=1, top_n=30,
         "MIN_SCORE": min_score,
         "TOP_N": top_n,
     }
-    with patch.multiple(mod, **patches):
+    # Also patch the underlying history_store module that load_history delegates to
+    history_mod = mod._history_store
+    with patch.multiple(mod, **patches), \
+         patch.object(history_mod, "HISTORY_PATH", hist_path):
         result = mod.merge_and_dedup(
             hf or [], arxiv or [], target, days=days, top_n=top_n,
         )

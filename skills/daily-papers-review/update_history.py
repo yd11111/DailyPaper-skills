@@ -24,7 +24,6 @@ import argparse
 import json
 import re
 import sys
-from datetime import datetime, timedelta
 from pathlib import Path
 
 _SHARED_DIR = Path(__file__).resolve().parent.parent / "_shared"
@@ -32,28 +31,8 @@ if str(_SHARED_DIR) not in sys.path:
     sys.path.insert(0, str(_SHARED_DIR))
 
 from arxiv_id import extract_id as _extract_arxiv_id, extract_all_ids
-from user_config import daily_papers_dir, temp_file_path
-
-HISTORY_FILE = daily_papers_dir() / ".history.json"
-DAYS_TO_KEEP = 30
-
-
-def load_history() -> list:
-    """Load existing history or return empty list."""
-    if not HISTORY_FILE.exists():
-        return []
-    try:
-        with open(HISTORY_FILE, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    except (json.JSONDecodeError, FileNotFoundError):
-        return []
-
-
-def save_history(history: list):
-    """Save history to file."""
-    HISTORY_FILE.parent.mkdir(parents=True, exist_ok=True)
-    with open(HISTORY_FILE, 'w', encoding='utf-8') as f:
-        json.dump(history, f, ensure_ascii=False, indent=2)
+from user_config import temp_file_path
+import history_store as _history_store
 
 
 
@@ -105,39 +84,8 @@ def load_from_recommendation(path: str) -> list:
 
 def update_history(entries: list, date: str, preserve_earliest: bool = True):
     """Update history with new entries."""
-    history = load_history()
-
-    # Build index of existing IDs
-    existing_ids = {h.get('id') for h in history if h.get('id')}
-
-    # Add new entries
-    added = 0
-    for entry in entries:
-        arxiv_id = entry.get('id', '')
-        if not arxiv_id:
-            continue
-
-        if arxiv_id not in existing_ids:
-            history.append({
-                'id': arxiv_id,
-                'date': date,
-                'title': entry.get('title', ''),
-            })
-            existing_ids.add(arxiv_id)
-            added += 1
-        elif preserve_earliest:
-            # Update to preserve earliest date
-            for h in history:
-                if h.get('id') == arxiv_id:
-                    if h.get('date', '') > date:
-                        h['date'] = date
-                    break
-
-    # Remove old entries (older than 30 days)
-    cutoff_date = (datetime.strptime(date, '%Y-%m-%d') - timedelta(days=DAYS_TO_KEEP)).strftime('%Y-%m-%d')
-    history = [h for h in history if h.get('date', '') >= cutoff_date]
-
-    save_history(history)
+    added = _history_store.append(entries, date, preserve_earliest=preserve_earliest)
+    _history_store.prune(reference_date=date)
     return added
 
 

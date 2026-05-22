@@ -44,7 +44,8 @@ TOP_N = _CONFIG["top_n"]
 MAX_AGE_DAYS = _CONFIG.get("max_age_days", 7)
 
 DAILYPAPERS_DIR = daily_papers_dir()
-HISTORY_PATH = DAILYPAPERS_DIR / ".history.json"
+import history_store as _history_store
+HISTORY_PATH = _history_store.HISTORY_PATH
 
 ATOM_NS = {
     "atom": "http://www.w3.org/2005/Atom",
@@ -284,12 +285,7 @@ def fetch_arxiv_papers(start_date=None, end_date=None, days: int = 1) -> list[di
 
 
 def load_history() -> list[dict]:
-    if HISTORY_PATH.exists():
-        try:
-            return json.loads(HISTORY_PATH.read_text())
-        except (json.JSONDecodeError, IOError):
-            pass
-    return []
+    return _history_store.load()
 
 
 def load_fallback_ids(days: int = 7) -> set[str]:
