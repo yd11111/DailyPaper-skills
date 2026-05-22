@@ -118,9 +118,10 @@
 - `paper-reader/paper_daemon.py` + `paper-reader/assets/zotero_helper.py` + `paper-reader/assets/reorganize_notes.py`
 - 都是"开 readonly + 走 collections 树"。抽 `_shared/zotero_db.py`
 
-### P2-3：`sys.path` bootstrap 在 10 个文件里 copy-paste
-- 同样的 3 行 `_SHARED_DIR = ... / sys.path.insert(0, ...)` 出现 10 次
+### P2-3：`sys.path` bootstrap 在 10 个文件里 copy-paste — **wontfix**
+- 同样的 3 行 `_SHARED_DIR = ... / sys.path.insert(0, ...)` 出现 11 次
 - 修复方向：(a) `_shared/` 加 `__init__.py` + `pyproject.toml` 当成包，或 (b) 一个 `_shared/bootstrap.py` 大家 import
+- **决定**：保留现状。3 行 boilerplate 胜于引入 pyproject.toml 安装步骤或 bootstrap.py 的间接层。各 caller 深度不同（parent.parent vs parents[1] vs parents[2]），一个通用 bootstrap 反而更难理解
 
 ### ~~P2-4~~ ✅ `load_history` 实现 2 次，两个 schema owner
 
@@ -140,7 +141,9 @@
 ### P2-6：`paper-reader/paper_daemon.py` 无测试（788 行，最大文件）
 - 至少这些纯函数该测：`title_matches_note / _normalize_method_name / _extract_note_method_names / parse_reset_wait_seconds / detect_limit_error`
 
-### P2-7：`daily-papers-notes/backfill_links.py` 无测试
+### ~~P2-7~~ ✅ `daily-papers-notes/backfill_links.py` 无测试
+
+**已修（2026-05-22）**：新建 `scripts/test_backfill_links.py`，11 个测试覆盖 extract_method_name_from_title / match_papers_with_notes（find/skip/already-linked/normalized）/ backfill_links（insert/no-match）/ update_diversion_table。
 - `match_papers_with_notes`（line 80）regex 脆弱；`update_diversion_table` 不 match 时静默部分更新
 
 ### P2-8：错误处理无统一策略，9 处 silent return
