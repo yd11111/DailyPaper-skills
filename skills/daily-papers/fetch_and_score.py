@@ -36,6 +36,7 @@ KEYWORDS = _CONFIG["keywords"]
 NEGATIVE_KEYWORDS = _CONFIG["negative_keywords"]
 DOMAIN_BOOST_KEYWORDS = _CONFIG["domain_boost_keywords"]
 ARXIV_CATEGORIES = _CONFIG["arxiv_categories"]
+TECH_REPORT_INSTITUTIONS = _CONFIG.get("tech_report_boost_institutions", [])
 MIN_SCORE = _CONFIG["min_score"]
 TOP_N = _CONFIG["top_n"]
 # 论文 published date 距今最大允许天数；超龄一律剔除
@@ -77,6 +78,13 @@ def score_paper(paper: dict) -> int:
         score += 2
     elif domain_hits == 1:
         score += 1
+
+    # 4. Tech report from known speech/audio institutions: +3
+    if TECH_REPORT_INSTITUTIONS and "technical report" in title_lower:
+        authors_aff = (paper.get("authors", "") + " " + paper.get("affiliations", "")).lower()
+        combined = text + " " + authors_aff
+        if any(inst in combined for inst in TECH_REPORT_INSTITUTIONS):
+            score += 3
 
     return score
 
