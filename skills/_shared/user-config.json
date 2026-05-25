@@ -119,7 +119,12 @@
       "moonshot", "月之暗面",
       "01.ai", "零一万物",
       "sensetime", "商汤",
-      "iflytek", "科大讯飞", "讯飞"
+      "iflytek", "科大讯飞", "讯飞",
+      "northwestern polytechnical", "西北工业大学", "西工大", "npu",
+      "ustc", "中国科学技术大学", "中科大",
+      "shanghai jiao tong", "上海交通大学", "上交", "sjtu",
+      "chinese university of hong kong", "香港中文大学", "cuhk",
+      "fudan", "复旦", "moss"
     ],
     "min_score": 2,
     "top_n": 15,
