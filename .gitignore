@@ -21,3 +21,10 @@ __pycache__/
 /tmp/
 *.tmp
 *.swp
+
+# 论文资源本地化缓存（PDF / HTML / GitHub clone），不进 git
+# 详见 ~/DailyPaper/skills/paper-reader/references/no-hallucination-rules.md §11.5
+.cache/
+
+# Playwright MCP 运行时产物（console log / page 快照），工具临时文件不进 git
+.playwright-mcp/

@@ -4,10 +4,49 @@ method_name: "{MethodName}"
 authors: [{Authors}]
 year: {Year}
 venue: {Venue}
+arxiv_id: "{arxiv_id}"
 tags: [{tags}]
 zotero_collection: {zotero_path}
-image_source: online  # online（默认）/ mixed / local
-arxiv_html: {arxiv_html_url}  # 如有
+
+# === 论文核心技术元数据（三层 verify 强制要求，每条都标 [§X] / [GitHub: <path>] 来源）===
+# 见 references/no-hallucination-rules.md §11 三层 verify 体系
+# Layer 1: 论文原文 [§X / Eq.X / Tab.X / Fig.X]  → Layer 2: GitHub 源码 [GitHub: <repo>/<path>:<line>]  → Layer 3: 第三方实现
+lm_init: "{描述} [§X 或 GitHub: <path>]"            # cold-start (从头训练) / warm-start (用 X LLM 初始化) / scratch+warmup
+training_loss: "{描述} [§X / Eq.X / GitHub: <path>]" # speech-token CE only / 多任务 / 含文本 loss / KL 约束等
+tokenizer_arch: "{描述} [§X / Fig.X / GitHub: <path>]" # text+speech 分离 / interleaved unified / 并行多 codebook 等
+multitask: {true/false} "[§X 或 GitHub: <path>]"     # 是否多任务训练
+training_data: "{规模 / 构成} [§X 或 GitHub: <path>]" # 具体小时数 + 语种比例 + 来源
+post_training: "{算法} [§X 或 GitHub: <path>]"       # RLHF / DPO / DiffRO / 自定义 reward / 无
+codec_detail: "{细节} [§X 或 GitHub: <path>]"        # RVQ N 层 / FSQ levels / 码本大小 / 帧率（如适用）
+
+# === 知识地图联动（详见 0-工作台/笔记frontmatter规范）===
+domain: {domain}                       # TTS / ASR / Codec / SpeechLM / Dialogue / Omni / SVS / ...
+subdomain: {subdomain}                 # 可选，二级领域
+routes: [{routes}]                     # 技术路线标签，多选，见规范 §2
+problems: [{problems}]                 # 解决/触及的核心问题，多选，见规范 §3
+representations: [{representations}]   # 涉及的表示空间，多选，见规范 §4
+related_maps:                          # 应反哺哪些地图（最少 1 个）
+  - "[[{map1}]]"
+related_surveys:                       # 可选
+  - "[[{survey1}]]"
+evidence_level: {evidence}             # high / medium / low，见规范 §5
+maturity: {maturity}                   # mature / emerging / exploratory，见规范 §6
+last_repositioned: {date}              # 最近一次基于新认知重新定位的日期
+
+# === 回流状态（由后续 review 人工/自动维护）===
+map_backfilled: false                  # 是否已回填到地图
+backfilled_at:                         # 回填完成时间
+
+# === 资源本地化路径（cache_paper_resources.py 自动填充，详见 SKILL.md §2.4 + no-hallucination-rules.md §11.5）===
+pdf_local: "{pdf_local_path}"          # vault 外 cache/papers/{arxiv_id}/paper.pdf
+html_local: "{html_local_path}"        # vault 外 cache/papers/{arxiv_id}/paper.html（离线 grep 用）
+figures_dir: "{figures_relative_path}" # vault 内 _resources/{arxiv_id}/figures/（Obsidian wikilink 用相对 paper_notes 路径）
+github_local: "{github_local_path}"    # vault 外 cache/papers/{arxiv_id}/github/{org}_{repo}/（如 default_clone_github=true）
+cached_at: {cached_at}                 # 资源缓存日期
+
+# === 通用元数据 ===
+image_source: online                   # online（默认）/ mixed / local
+arxiv_html: {arxiv_html_url}           # 如有
 created: {date}
 ---
 
@@ -53,6 +92,11 @@ created: {date}
 ---
 
 ## 方法详解
+
+### 领域定位
+
+<!-- R4: 2-3 句话把论文放到领域图谱里 -->
+{方法名} 属于 **{范式类别}** 路线（如 codec LM / flow matching / 端到端 VAE / 自回归 mel），与 [[{同类工作1}]]、[[{同类工作2}]] 同属一类。相对已有工作的核心差异在于 {一句话点明 novelty 定位}。
 
 ### 模型架构
 
@@ -191,17 +235,37 @@ $$
 
 {定性结果的关键观察}
 
+### 结果可信度
+
+<!-- R3: 将论文结果分三档 -->
+
+| 可信度 | 结果 | 理由 |
+|--------|------|------|
+| **高** | {如: ASR 在 LibriSpeech 上的 WER} | {有标准 benchmark、强基线对比、可复现} |
+| **中** | {如: TTS arena 胜率} | {主观评测、评审人数/显著性未给} |
+| **低** | {如: Realtime 主观评分} | {baseline 不透明、量纲不明} |
+
 ---
 
 ## 批判性思考
 
+### 核心 Claim 审查
+
+<!-- R1: 区分 Paper Claim 和 My Assessment -->
+
+1. **Paper Claim**: {作者的核心声明，如 "achieves SOTA on X"}
+   **My Assessment**: {你的判断 + 依据，如 "在作者选取的 benchmark 上成立，但缺少与 Y 的对比"}
+
+2. **Paper Claim**: {第二个核心声明}
+   **My Assessment**: {判断}
+
 ### 优点
-1. {优点1}
+1. {优点1——具体指出哪个数字强、哪个设计有新意}
 2. {优点2}
 3. {优点3}
 
 ### 局限性
-1. {局限1}
+1. {局限1——具体指出哪个假设不成立、哪个实验缺了}
 2. {局限2}
 
 ### 潜在改进方向
@@ -213,6 +277,27 @@ $$
 - [ ] 预训练模型
 - [ ] 训练细节完整
 - [ ] 数据集可获取
+
+---
+
+## 🗺️ 在知识地图中的定位
+
+<!-- 必填。让每篇论文天然带"它会更新哪张地图"的信息。详见 0-工作台/笔记frontmatter规范 §7。 -->
+
+- **所属领域**：[[{domain}-领域总览]]
+- **技术路线**：[[{domain}-技术路线图]] §<具体路线/章节>
+- **核心问题**：[[{domain}-核心挑战]] §<挑战名>
+- **表示层位置**：[[{domain}-表示层地图]] §<表示类型>（如适用）
+- **在 SpeechLM/对话框架内的位置**：[[TTS-SpeechLM-Dialogue关系]] 位置 ① / ② / ③ / ④（如适用）
+- **相邻工作**：[[{相邻模型1}]] / [[{相邻模型2}]] / [[{相邻模型3}]]
+
+---
+
+## 🔄 后续重估
+
+<!-- 每次基于新认知重新评估，加一行，不删旧条目。重估的演进本身就是知识。 -->
+
+- **{date}**：初读。{你的初步判断 + 限定条件}
 
 ---
 

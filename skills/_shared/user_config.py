@@ -75,6 +75,13 @@ DEFAULT_CONFIG = {
         "git_commit": False,
         "git_push": False,
     },
+    "cache": {
+        "cache_root": "~/DailyPaper/.cache",
+        "papers_subdir": "papers",
+        "vault_resources_folder": "_resources",
+        "default_clone_github": True,
+        "retention_days": 90,
+    },
 }
 
 
@@ -203,3 +210,32 @@ def temp_file_path(filename: str) -> Path:
         enriched_path = temp_file_path('daily_papers_enriched.json')
     """
     return temp_dir() / filename
+
+
+# ── Paper resource cache (vault 外重型 + vault 内轻型分层) ──────────────────────
+
+def cache_config() -> dict:
+    return load_user_config().get("cache", {})
+
+
+def cache_root() -> Path:
+    """vault 外 cache 根目录（PDF / HTML / GitHub clone 等重型资源）。"""
+    return _expand(cache_config().get("cache_root", "~/DailyPaper/.cache"))
+
+
+def cache_papers_dir() -> Path:
+    """vault 外 cache/papers/ 目录，按 arxiv_id 分层存储。"""
+    return cache_root() / cache_config().get("papers_subdir", "papers")
+
+
+def vault_resources_dir() -> Path:
+    """vault 内 论文笔记/_resources/ 目录（图表，加 .gitignore 排除）。"""
+    return paper_notes_dir() / cache_config().get("vault_resources_folder", "_resources")
+
+
+def default_clone_github() -> bool:
+    return bool(cache_config().get("default_clone_github", True))
+
+
+def cache_retention_days() -> int:
+    return int(cache_config().get("retention_days", 90))

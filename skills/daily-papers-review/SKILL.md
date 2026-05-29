@@ -142,6 +142,11 @@ description: |
 
 ##### 1. 开头：今日锐评 + 分流表
 
+**先读 `/tmp/daily_papers_search_meta.json` 的 `api_health` 字段**：
+- 如果 `api_health.arxiv.status == "failed"` 或 `api_health.hf_daily.status` 是 `failed` / `partial`，必须在锐评开头用一段 `> ⚠️ **抓取告警**` 引用块明确指出哪个源挂了（含 `last_error` 或失败天数），并提醒"今日候选池仅基于剩余源，可能漏掉部分论文"。
+- 在这种情况下，**严禁**把"论文少"归因为"今天没什么新东西 / 空军日"——必须归因为 API 故障，并建议用户次日重跑或扩大窗口。
+- 两个源都 `ok` 时不写这个块。
+
 用 `# 🔪 今日锐评` 作为标题。2-3 句话，简短直接：
 - 今天论文整体水平如何
 - 哪个方向在爆发、哪些是灌水重灾区
@@ -328,6 +333,9 @@ search_meta:
     history_deduped: <n>
     final: <n>
   source_breakdown_of_final: {hf-daily: <n>, arxiv: <n>}
+  api_health:
+    arxiv: <meta.api_health.arxiv.status>            # ok / retry_recovered / failed
+    hf_daily: <meta.api_health.hf_daily.status>      # ok / partial / failed / skipped
 ---
 ```
 
@@ -346,6 +354,7 @@ search_meta:
 - **arXiv 类目**：{cs.SD, eess.AS, cs.CL, cs.MM, cs.HC}
 - **关键词数**：{keywords_count} 正向 / {negative_keywords_count} 负向 / {domain_boost_count} 加分
 - **打分门槛**：min_score = {min_score}
+- **API 健康度**：arXiv {api_health.arxiv.status}{ if failed: `（{last_error}）` } / HF Daily {api_health.hf_daily.status}{ if partial/failed: `（{days_succeeded}/{days_attempted} 天成功）` }
 - **数据流**：HF {hf} 篇 + arXiv {arxiv} 篇 → 年龄过滤剩 {age_kept}（丢 {age_dropped}） → 去重 {merged_unique} → 历史去重 {history_kept}（去掉 {history_removed} 已推） → min_score 过 {score_kept} → 历史回补 {backfill} → **最终 {final_count}**
 - **最终入选来源**：HF Daily {n} + arXiv {n}
 

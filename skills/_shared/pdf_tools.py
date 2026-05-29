@@ -128,7 +128,13 @@ def extract_images(
         )
     except (subprocess.CalledProcessError, subprocess.TimeoutExpired, OSError):
         return []
-    return sorted(
-        p for p in out.glob(f"{prefix}-*.png")
-        if p.stat().st_size >= min_size_bytes
-    )
+    kept: list[Path] = []
+    for p in sorted(out.glob(f"{prefix}-*.png")):
+        if p.stat().st_size >= min_size_bytes:
+            kept.append(p)
+        else:
+            # 真正"drop tiny icons/decorations"——不只是从返回列表里过滤掉
+            # （bug 修复 2026-05-26：旧实现只过滤 return list，小文件残留在 disk
+            # 上污染 vault/_resources/ 目录）
+            p.unlink(missing_ok=True)
+    return kept
